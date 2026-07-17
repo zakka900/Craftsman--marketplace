@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Artisan Client",
+    "slug": "artisan-client",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "artisanclient",
+    "splash": {
+      "backgroundColor": "#007AFF",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.artisan.client"
+    },
+    "android": {
+      "package": "com.artisan.client"
+    },
+    "plugins": [
+      "expo-localization"
+    ],
+    "extra": {
+      "supportsRTL": true
+    }
+  }
+}

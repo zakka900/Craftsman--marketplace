@@ -1,0 +1,273 @@
+{
+  "common": {
+    "next": "Next", "skip": "Skip", "continue": "Continue", "cancel": "Cancel",
+    "save": "Save", "edit": "Edit", "send": "Send", "confirm": "Confirm",
+    "retry": "Retry", "back": "Back", "done": "Done", "search": "Search",
+    "seeAll": "See all", "optional": "optional", "loading": "Loading...",
+    "error": "Something went wrong", "yes": "Yes", "no": "No", "or": "or"
+  },
+  "onboarding": {
+    "s1t": "Post your job or find a pro",
+    "s1s": "Describe what you need, add photos, and reach trusted professionals near you.",
+    "s2t": "Receive quotes fast",
+    "s2s": "Verified artisans send you clear quotes. Compare prices, ratings and timing.",
+    "s3t": "Pay safely, track everything",
+    "s3s": "Your payment stays protected until the job is done and you confirm it.",
+    "register": "Create account", "haveAccount": "I already have an account"
+  },
+  "auth": {
+    "welcome": "Welcome",
+    "registerTitle": "Create your account",
+    "loginTitle": "Welcome back",
+    "google": "Continue with Google",
+    "apple": "Continue with Apple",
+    "firstName": "First name", "lastName": "Last name",
+    "phone": "Phone number", "email": "Email",
+    "password": "Password", "confirmPassword": "Confirm password",
+    "passwordsMismatch": "Passwords do not match",
+    "register": "Sign up", "login": "Log in",
+    "forgot": "Forgot password?",
+    "noAccount": "No account? Sign up", "hasAccount": "Have an account? Log in",
+    "invalidEmail": "Enter a valid email address",
+    "invalidPhone": "Enter a valid phone number",
+    "required": "This field is required",
+    "errNotFound": "No account found with these credentials",
+    "errWrongPassword": "Incorrect password. Try again or reset it",
+    "errNotVerified": "Account not verified yet. Let's verify it now",
+    "pwRules": {
+      "minLength": "At least 8 characters",
+      "upper": "One uppercase letter",
+      "lower": "One lowercase letter",
+      "number": "One number",
+      "special": "One special character"
+    },
+    "pwWeak": "Weak", "pwMedium": "Medium", "pwStrong": "Strong"
+  },
+  "otp": {
+    "phoneTitle": "Verify your phone",
+    "emailTitle": "Verify your email",
+    "phoneSub": "Enter the 6-digit code we sent to {{target}}",
+    "emailSub": "Enter the 6-digit code we emailed to {{target}}",
+    "resendIn": "Resend code in {{s}}s",
+    "resend": "Resend code",
+    "viaWhatsapp": "Send via WhatsApp instead",
+    "wrongCode": "Incorrect code, please try again",
+    "demoHint": "Demo code: 123456",
+    "verified": "Verified!"
+  },
+  "forgot": {
+    "title": "Reset password",
+    "sub": "Enter your email or phone and we'll send you a reset code",
+    "emailOrPhone": "Email or phone",
+    "sendCode": "Send code",
+    "newPassword": "New password",
+    "setPassword": "Set new password",
+    "success": "Password updated. You can now log in."
+  },
+  "bank": {
+    "title": "Verify your bank account",
+    "why": "Why we ask this",
+    "whyText": "A quick, secure bank verification protects your payments, prevents fraud and unlocks the full payment limit. We never see your credentials — you approve everything inside your own banking app.",
+    "selectBank": "Select your bank",
+    "goToBank": "You'll be redirected to your bank's app to approve the request.",
+    "pending": "Verification in progress...",
+    "pendingSub": "Approve the request in your banking app. This screen updates automatically.",
+    "success": "Account verified ✅",
+    "successSub": "You're all set. Payments are now fully enabled.",
+    "failed": "Verification failed",
+    "failedSub": "Something went wrong on the bank's side. You can retry or skip for now.",
+    "skip": "Skip for now",
+    "skipNote": "You can verify later. Until then, payments above a limit will be blocked.",
+    "goHome": "Go to Home",
+    "badgeUnverified": "Account not verified"
+  },
+  "home": {
+    "hello": "Hi, {{name}}",
+    "searchPlaceholder": "Search an artisan or a category...",
+    "publishTitle": "What job do you need done?",
+    "publishSub": "Describe it, get quotes from trusted pros",
+    "publishCta": "Post a job",
+    "categories": "Categories",
+    "activeJobs": "Your active jobs",
+    "beforeAfter": "Before / After near you",
+    "noActive": "No active jobs",
+    "noActiveSub": "Post your first job and quotes will appear here"
+  },
+  "categories": {
+    "plumber": "Plumber", "electrician": "Electrician", "renovation": "Renovation",
+    "painter": "Painter", "hvac": "AC & Climate", "carpenter": "Carpenter",
+    "cleaning": "Cleaning", "moving": "Moving", "gardening": "Gardening", "other": "Other"
+  },
+  "subs": {
+    "plumber": { "leak": "Water leak", "sanitary": "Sanitary replacement", "new_system": "New system", "water_heater": "Water heater", "other": "Other" },
+    "electrician": { "fault": "Fault / outage", "new_points": "New sockets/points", "panel": "Electrical panel", "lighting": "Lighting", "other": "Other" },
+    "renovation": { "full_reno": "Full renovation", "bathroom": "Bathroom", "kitchen": "Kitchen", "flooring": "Flooring", "other": "Other" },
+    "painter": { "interior": "Interior", "exterior": "Exterior", "decorative": "Decorative", "other": "Other" },
+    "hvac": { "ac_install": "AC installation", "ac_repair": "AC repair", "maintenance": "Maintenance", "other": "Other" },
+    "carpenter": { "furniture": "Furniture", "doors": "Doors & windows", "repair": "Repair", "custom": "Custom work", "other": "Other" },
+    "cleaning": { "deep": "Deep cleaning", "post_reno": "Post-renovation", "regular": "Regular", "other": "Other" },
+    "moving": { "home": "Home move", "office": "Office move", "single_items": "Single items", "other": "Other" },
+    "gardening": { "maintenance": "Maintenance", "landscaping": "Landscaping", "irrigation": "Irrigation", "other": "Other" },
+    "other": { "other": "Other" }
+  },
+  "wizard": {
+    "step": "Step {{n}} of 4",
+    "s1Title": "What kind of job?",
+    "s1Sub": "Pick a category, then a specific type",
+    "s2Title": "Describe the job",
+    "s2Placeholder": "Describe the job in detail...",
+    "aiHints": "Tips to get better quotes",
+    "addPhotos": "Add photos / videos",
+    "photoHints": "Photo suggestions",
+    "s3Title": "Practical details",
+    "city": "City", "zone": "Area / district", "zonePlaceholder": "e.g. Al Olaya",
+    "property": "Property type",
+    "propertyHouse": "House", "propertyApartment": "Apartment", "propertyOffice": "Office", "propertySite": "Site / Other",
+    "urgency": "Urgency",
+    "urgencyNow": "ASAP", "urgencyWeek": "Within 1 week", "urgencyFlexible": "No rush",
+    "budget": "Indicative budget", "budgetOn": "Set a budget range",
+    "s4Title": "Summary",
+    "category": "Category", "description": "Description", "photos": "Photos", "details": "Details",
+    "submit": "Send request",
+    "sentTitle": "Request sent!",
+    "sentSub": "We're finding the best artisans for you",
+    "directTo": "Direct request to {{name}}"
+  },
+  "status": {
+    "awaiting_quotes": "Waiting for quotes",
+    "quotes_received": "{{n}} quotes received",
+    "artisan_selected": "Artisan selected",
+    "in_progress": "Job in progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "disputed": "Disputed"
+  },
+  "quotes": {
+    "title": "Quotes",
+    "recommended": "Recommended",
+    "labor": "Labor", "materials": "Materials",
+    "days": "{{n}} days", "km": "{{n}} km",
+    "viewProfile": "Profile", "chat": "Chat", "choose": "Choose",
+    "sortRating": "Rating", "sortPrice": "Price", "sortTime": "Timing",
+    "empty": "No quotes yet",
+    "emptySub": "Artisans are reviewing your request. You'll get a notification for each new quote.",
+    "reviews": "{{n}} reviews",
+    "history": "Request history",
+    "infoRequests": "Info requests from artisans"
+  },
+  "moreInfo": {
+    "title": "More info requested",
+    "notif": "{{name}} needs more information for your job",
+    "asks": "{{name}} asks:",
+    "photoWanted": "Requested photos:",
+    "replyPlaceholder": "Write your answer...",
+    "attachPhotos": "Attach photos",
+    "replied": "Your reply was sent to the artisan",
+    "reply": "Send reply"
+  },
+  "artisan": {
+    "yearsActive": "{{n}} years active",
+    "jobsDone": "{{n}} jobs completed",
+    "licenseVerified": "License verified",
+    "portfolio": "Before / After portfolio",
+    "reviews": "Client reviews",
+    "directRequest": "Send direct request",
+    "chat": "Chat",
+    "about": "About"
+  },
+  "contract": {
+    "title": "Digital contract",
+    "sub": "Review and sign to proceed to the secure deposit",
+    "price": "Agreed price", "scope": "Included works", "timing": "Timing",
+    "terms": "Conditions",
+    "term1": "Payment is held safely by the platform until you confirm the completed job.",
+    "term2": "Any change to the scope requires a new agreed quote.",
+    "term3": "Disputes are handled by platform support with full history as evidence.",
+    "sign": "Tap to sign and accept",
+    "signed": "Contract signed"
+  },
+  "payment": {
+    "title": "Secure deposit",
+    "escrow": "Your payment stays locked safely until you confirm the job is done.",
+    "methods": "Payment method",
+    "card": "Card", "applePay": "Apple Pay", "googlePay": "Google Pay", "mada": "mada",
+    "pay": "Pay {{amount}}",
+    "success": "Payment received!",
+    "successSub": "The artisan has been notified and will start as agreed.",
+    "receipt": "Receipt #{{id}}",
+    "limitBlocked": "Amount above the limit for unverified accounts. Verify your bank account to proceed."
+  },
+  "job": {
+    "title": "Job tracking",
+    "stage_confirmed": "Confirmed", "stage_started": "Started",
+    "stage_working": "In progress", "stage_completed": "Completed",
+    "stage_client_confirmed": "Confirmed by you",
+    "updates": "Updates from the artisan",
+    "reportProblem": "Report a problem",
+    "completedTitle": "The artisan marked the job as completed",
+    "confirmJob": "Confirm & release payment",
+    "openDispute": "Open a dispute"
+  },
+  "dispute": {
+    "title": "Open a dispute",
+    "reason": "What's the problem?",
+    "reasons": ["Work not completed", "Poor quality", "Damage caused", "Price disagreement", "Other"],
+    "describe": "Describe the issue",
+    "evidence": "Photo evidence",
+    "note": "The quote, contract and chat history are automatically attached to the dispute.",
+    "submit": "Submit dispute",
+    "sent": "Dispute opened. Our support team will contact you within 24h."
+  },
+  "review": {
+    "title": "Leave a review",
+    "overall": "Overall rating",
+    "quality": "Quality", "punctuality": "Punctuality",
+    "cleanliness": "Cleanliness", "communication": "Communication",
+    "textPlaceholder": "Tell others how it went...",
+    "addPhotos": "Add photos of the result",
+    "recommend": "Would you hire them again?",
+    "submit": "Submit review",
+    "thanks": "Thank you for your review!"
+  },
+  "requests": {
+    "title": "My requests",
+    "tabs": { "active": "Active", "completed": "Completed", "cancelled": "Cancelled", "disputed": "Disputed" },
+    "empty": "Nothing here yet",
+    "emptySub": "Your requests will appear in this section"
+  },
+  "chat": {
+    "title": "Chat",
+    "empty": "No conversations",
+    "emptySub": "Chats with artisans will appear here",
+    "placeholder": "Write a message...",
+    "online": "Online", "typing": "Typing...", "seen": "Seen"
+  },
+  "profile": {
+    "title": "Profile",
+    "statRequests": "Requests", "statCompleted": "Completed", "statWallet": "Wallet",
+    "personalData": "Personal data",
+    "paymentMethods": "Payment methods",
+    "notifications": "Notification preferences",
+    "language": "Language",
+    "support": "Support",
+    "privacy": "Privacy & data protection",
+    "privacyNote": "Compliant with PDPL (KSA), PDPL (UAE) and Qatar data protection law",
+    "referral": "Invite a friend",
+    "bankStatus": "Bank verification status",
+    "settings": "Account settings",
+    "logout": "Log out",
+    "deleteAccount": "Delete account",
+    "deleteConfirm": "Delete your account? This cannot be undone.",
+    "verified": "Verified", "notVerified": "Not verified"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications",
+    "emptySub": "Quotes, messages and job updates will appear here"
+  },
+  "ai": {
+    "addToText": "Tap to add to your description",
+    "photoQuality": "This photo looks blurry — try re-uploading it",
+    "morePhotos": "Add a wider photo of the area to help artisans quote accurately"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules/
+.expo/
+dist/
+build/
+*.log
+.env
+.DS_Store
+apps/backend/prisma/migrations/dev.db*

@@ -1,0 +1,368 @@
+// Schema Prisma completo — Marketplace Artigiani (App Cliente)
+// Copre: utenti, OTP, verifica bancaria, artigiani, richieste, preventivi,
+// richieste-info, contratti, pagamenti escrow, lavori, dispute, recensioni, chat, notifiche.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Supabase: DATABASE_URL = connessione pooled (porta 6543, pgbouncer)
+  //           DIRECT_URL   = connessione diretta (porta 5432) per migrazioni/db push
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------- ENUM ----------------
+
+enum Country {
+  SA
+  AE
+  QA
+  KW
+}
+
+// Verifica SOLO via email (niente SMS)
+enum OtpPurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+enum BankVerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+  SKIPPED
+}
+
+enum Urgency {
+  NOW
+  WEEK
+  FLEXIBLE
+}
+
+enum PropertyType {
+  APARTMENT
+  VILLA
+  OFFICE
+  SHOP
+}
+
+enum RequestStatus {
+  AWAITING_QUOTES
+  QUOTES_RECEIVED
+  ARTISAN_SELECTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum JobStage {
+  CONFIRMED
+  STARTED
+  WORKING
+  COMPLETED
+  CLIENT_CONFIRMED
+}
+
+enum PaymentStatus {
+  PENDING
+  HELD_ESCROW // trattenuto fino a conferma cliente
+  RELEASED
+  REFUNDED
+  FAILED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED_CLIENT
+  RESOLVED_ARTISAN
+  CLOSED
+}
+
+enum NotificationType {
+  QUOTE
+  INFO_REQUEST
+  CHAT
+  JOB
+  BANK
+  PROMO
+}
+
+// ---------------- MODELLI ----------------
+
+model User {
+  id            String   @id @default(cuid())
+  firstName     String
+  lastName      String
+  email         String   @unique
+  phone         String?  @unique // opzionale: verifica solo via email
+  country       Country
+  passwordHash  String?
+  socialId      String? // Google/Apple sub
+  emailVerified Boolean  @default(false)
+  bankVerified  Boolean  @default(false)
+  language      String   @default("en") // en | ar
+  stripeCustomerId String? @unique // Stripe Customer collegato
+  createdAt     DateTime @default(now())
+
+  otpCodes          OtpCode[]
+  bankVerifications BankVerification[]
+  requests          Request[]
+  contracts         Contract[]
+  payments          Payment[]
+  reviews           Review[]
+  conversations     Conversation[]
+  notifications     Notification[]
+  disputes          Dispute[]
+}
+
+model OtpCode {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose   OtpPurpose
+  codeHash  String // sha256 del codice: mai in chiaro nel DB
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime   @default(now())
+
+  @@index([userId, purpose])
+}
+
+model BankVerification {
+  id         String                 @id @default(cuid())
+  userId     String
+  user       User                   @relation(fields: [userId], references: [id])
+  bankId     String
+  status     BankVerificationStatus @default(PENDING)
+  providerId String? // id sessione Lean Technologies
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+
+  @@index([userId])
+}
+
+model Artisan {
+  id         String  @id @default(cuid())
+  name       String
+  categoryId String
+  city       String
+  country    Country
+  bio        String?
+  verified   Boolean @default(false)
+  rating     Float   @default(0)
+  jobsDone   Int     @default(0)
+  avatarUrl  String?
+
+  portfolio     PortfolioItem[]
+  quotes        Quote[]
+  infoRequests  InfoRequest[]
+  contracts     Contract[]
+  reviews       Review[]
+  conversations Conversation[]
+
+  @@index([categoryId, city])
+}
+
+model PortfolioItem {
+  id          String  @id @default(cuid())
+  artisanId   String
+  artisan     Artisan @relation(fields: [artisanId], references: [id])
+  beforeUrl   String
+  afterUrl    String
+  description String?
+}
+
+model Request {
+  id              String        @id @default(cuid())
+  clientId        String
+  client          User          @relation(fields: [clientId], references: [id])
+  categoryId      String
+  subcategory     String
+  description     String
+  photos          String[]
+  city            String
+  propertyType    PropertyType
+  urgency         Urgency
+  budgetMin       Int?
+  budgetMax       Int?
+  status          RequestStatus @default(AWAITING_QUOTES)
+  stage           JobStage?
+  directArtisanId String? // richiesta diretta a un artigiano specifico
+  createdAt       DateTime      @default(now())
+
+  quotes       Quote[]
+  infoRequests InfoRequest[]
+  contract     Contract?
+  jobUpdates   JobUpdate[]
+  dispute      Dispute?
+  review       Review?
+  events       RequestEvent[]
+
+  @@index([clientId, status])
+}
+
+model RequestEvent {
+  id        String   @id @default(cuid())
+  requestId String
+  request   Request  @relation(fields: [requestId], references: [id])
+  type      String // created | quote | info | stage | dispute | review
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model Quote {
+  id          String   @id @default(cuid())
+  requestId   String
+  request     Request  @relation(fields: [requestId], references: [id])
+  artisanId   String
+  artisan     Artisan  @relation(fields: [artisanId], references: [id])
+  price       Int
+  laborCost   Int
+  materials   Int
+  days        Int
+  note        String?
+  recommended Boolean  @default(false) // calcolato: rating*2 - (prezzo/max)*3
+  createdAt   DateTime @default(now())
+
+  @@index([requestId])
+}
+
+model InfoRequest {
+  id          String    @id @default(cuid())
+  requestId   String
+  request     Request   @relation(fields: [requestId], references: [id])
+  artisanId   String
+  artisan     Artisan   @relation(fields: [artisanId], references: [id])
+  question    String
+  photoHints  String[]
+  replyText   String?
+  replyPhotos String[]
+  repliedAt   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Contract {
+  id        String    @id @default(cuid())
+  requestId String    @unique
+  request   Request   @relation(fields: [requestId], references: [id])
+  clientId  String
+  client    User      @relation(fields: [clientId], references: [id])
+  artisanId String
+  artisan   Artisan   @relation(fields: [artisanId], references: [id])
+  quoteId   String
+  price     Int
+  currency  String
+  scope     String
+  days      Int
+  signedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  payment Payment?
+}
+
+model Payment {
+  id         String        @id @default(cuid())
+  contractId String        @unique
+  contract   Contract      @relation(fields: [contractId], references: [id])
+  clientId   String
+  client     User          @relation(fields: [clientId], references: [id])
+  amount     Int
+  currency   String
+  method     String // card | apple_pay | google_pay
+  status     PaymentStatus @default(PENDING)
+  providerId String?       @unique // Stripe PaymentIntent id (pi_...)
+  refundId   String? // Stripe Refund id (re_...)
+  receiptId  String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([clientId])
+}
+
+model JobUpdate {
+  id        String   @id @default(cuid())
+  requestId String
+  request   Request  @relation(fields: [requestId], references: [id])
+  text      String
+  photos    String[]
+  createdAt DateTime @default(now())
+}
+
+model Dispute {
+  id          String        @id @default(cuid())
+  requestId   String        @unique
+  request     Request       @relation(fields: [requestId], references: [id])
+  clientId    String
+  client      User          @relation(fields: [clientId], references: [id])
+  reason      String
+  description String
+  photos      String[]
+  status      DisputeStatus @default(OPEN)
+  createdAt   DateTime      @default(now())
+}
+
+model Review {
+  id            String   @id @default(cuid())
+  requestId     String   @unique
+  request       Request  @relation(fields: [requestId], references: [id])
+  clientId      String
+  client        User     @relation(fields: [clientId], references: [id])
+  artisanId     String
+  artisan       Artisan  @relation(fields: [artisanId], references: [id])
+  rating        Int
+  quality       Int
+  punctuality   Int
+  cleanliness   Int
+  communication Int
+  text          String?
+  photos        String[]
+  recommend     Boolean
+  createdAt     DateTime @default(now())
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    User     @relation(fields: [clientId], references: [id])
+  artisanId String
+  artisan   Artisan  @relation(fields: [artisanId], references: [id])
+  requestId String?
+  createdAt DateTime @default(now())
+
+  messages Message[]
+
+  @@unique([clientId, artisanId, requestId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  from           String // client | artisan | system
+  text           String
+  imageUrl       String?
+  seenAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model Notification {
+  id             String           @id @default(cuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id])
+  type           NotificationType
+  title          String
+  body           String
+  requestId      String?
+  conversationId String?
+  read           Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+
+  @@index([userId, read])
+}

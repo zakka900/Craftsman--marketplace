@@ -1,0 +1,21 @@
+export type RootStackParamList = {
+  Onboarding: undefined;
+  Login: undefined;
+  Register: undefined;
+  Otp: { userId: string; channel: 'phone' | 'email'; target: string; nextChannel?: { channel: 'email'; target: string } };
+  ForgotPassword: undefined;
+  BankOnboarding: undefined;
+  BankVerification: { fromProfile?: boolean } | undefined;
+  MainTabs: undefined;
+  CreateRequest: { categoryId?: string; artisanId?: string } | undefined;
+  RequestDetail: { requestId: string };
+  MoreInfo: { infoId: string };
+  ArtisanProfile: { artisanId: string };
+  Contract: { requestId: string; quoteId: string };
+  Payment: { contractId: string };
+  JobTracking: { requestId: string };
+  Dispute: { requestId: string };
+  Review: { requestId: string };
+  ChatRoom: { conversationId: string };
+  Notifications: undefined;
+};
