@@ -4,6 +4,7 @@
   "private": true,
   "description": "Backend NestJS - Marketplace Artigiani (Stripe + Supabase + Railway)",
   "scripts": {
+    "start": "node dist/main.js",
     "start:dev": "nest start --watch",
     "build": "prisma generate && nest build",
     "start:prod": "node dist/main.js",

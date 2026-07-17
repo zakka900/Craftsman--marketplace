@@ -1,8 +1,13 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
     "target": "ES2021",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
