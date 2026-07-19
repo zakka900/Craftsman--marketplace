@@ -1,8 +1,8 @@
 /**
  * EMAIL transazionali (codici OTP di verifica e reset password).
- * Provider via SMTP (nodemailer): funziona con Resend, SendGrid, Mailgun, Amazon SES...
- * basta impostare SMTP_HOST/PORT/USER/PASS nel .env.
- * Se SMTP non è configurato (sviluppo locale) il codice viene loggato in console.
+ * Priorità: 1) Resend API HTTP (RESEND_API_KEY) — consigliato, funziona anche dove
+ * le porte SMTP sono bloccate (es. Railway trial). 2) SMTP generico (SMTP_HOST/PORT/USER/PASS).
+ * 3) Nessuno configurato (sviluppo locale) → il codice viene loggato in console.
  */
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -12,10 +12,12 @@ import * as nodemailer from 'nodemailer';
 export class MailService {
   private readonly logger = new Logger(MailService.name);
   private transporter: nodemailer.Transporter | null = null;
+  private resendKey: string | null = null;
 
   constructor(private config: ConfigService) {
+    this.resendKey = this.config.get<string>('RESEND_API_KEY') ?? null;
     const host = this.config.get<string>('SMTP_HOST');
-    if (host) {
+    if (!this.resendKey && host) {
       this.transporter = nodemailer.createTransport({
         host,
         port: Number(this.config.get('SMTP_PORT') ?? 587),
@@ -38,14 +40,31 @@ export class MailService {
         <p style="color:#8E8E93;font-size:13px">The code expires in 10 minutes. If you didn't request it, ignore this email.</p>
       </div>`;
 
+    const from = this.config.get<string>('MAIL_FROM') ?? 'Artisan <onboarding@resend.dev>';
+
+    if (this.resendKey) {
+      // Resend API HTTP (porta 443, mai bloccata)
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.resendKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ from, to, subject, html })
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        this.logger.error(`Resend API ${res.status}: ${err}`);
+        throw new Error(`Mail send failed (${res.status})`);
+      }
+      return;
+    }
+
     if (!this.transporter) {
-      // Sviluppo: nessun SMTP configurato → log in console
+      // Sviluppo: nessun provider configurato → log in console
       this.logger.warn(`[DEV MAIL] ${purpose} → ${to}: codice ${code}`);
       return;
     }
-    await this.transporter.sendMail({
-      from: this.config.get<string>('MAIL_FROM') ?? 'Artisan <no-reply@artisan.app>',
-      to, subject, html
-    });
+    await this.transporter.sendMail({ from, to, subject, html });
   }
 }
