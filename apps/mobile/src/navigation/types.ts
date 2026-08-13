@@ -18,4 +18,10 @@ export type RootStackParamList = {
   Review: { requestId: string };
   ChatRoom: { conversationId: string };
   Notifications: undefined;
+  PersonalData: undefined;
+  NotificationPreferences: undefined;
+  PrivacyPolicy: undefined;
+  InviteFriend: undefined;
+  PaymentMethods: undefined;
+  AccountSettings: undefined;
 };

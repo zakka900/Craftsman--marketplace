@@ -20,6 +20,12 @@ import DisputeWizard from '../screens/job/DisputeWizard';
 import Review from '../screens/job/Review';
 import ChatRoom from '../screens/chat/ChatRoom';
 import Notifications from '../screens/notifications/Notifications';
+import PersonalData from '../screens/profile/PersonalData';
+import NotificationPreferences from '../screens/profile/NotificationPreferences';
+import PrivacyPolicy from '../screens/profile/PrivacyPolicy';
+import InviteFriend from '../screens/profile/InviteFriend';
+import PaymentMethods from '../screens/profile/PaymentMethods';
+import AccountSettings from '../screens/profile/AccountSettings';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -56,6 +62,14 @@ export default function RootNavigator() {
           <Stack.Screen name="ChatRoom" component={ChatRoom} />
           <Stack.Screen name="Notifications" component={Notifications} />
           <Stack.Screen name="BankVerification" component={BankVerification} />
+          <Stack.Screen name="PersonalData" component={PersonalData} />
+          <Stack.Screen name="NotificationPreferences" component={NotificationPreferences} />
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
+          <Stack.Screen name="InviteFriend" component={InviteFriend} />
+          <Stack.Screen name="PaymentMethods" component={PaymentMethods} />
+          <Stack.Screen name="AccountSettings" component={AccountSettings} />
+          {/* Riusata anche da loggato, per "Cambia password" in Account settings */}
+          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
         </>
       )}
     </Stack.Navigator>

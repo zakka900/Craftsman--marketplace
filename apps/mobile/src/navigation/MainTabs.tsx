@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +7,7 @@ import Home from '../screens/home/Home';
 import MyRequests from '../screens/myRequests/MyRequests';
 import ChatList from '../screens/chat/ChatList';
 import Profile from '../screens/profile/Profile';
-import { colors } from '../theme';
+import { colors, radius, shadowStrong } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
@@ -17,22 +18,28 @@ const ICONS: Record<string, [string, string]> = {
   ProfileTab: ['person', 'person-outline']
 };
 
+/** Icona tab: quando attiva è racchiusa in una pastiglia circolare azzurra. */
+function TabIcon({ route, focused }: { route: string; focused: boolean }) {
+  const name = (focused ? ICONS[route][0] : ICONS[route][1]) as any;
+  return (
+    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+      <Ionicons name={name} size={24} color={focused ? '#fff' : colors.sub} />
+    </View>
+  );
+}
+
 export default function MainTabs() {
   const { t } = useTranslation();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.sub,
-        tabBarStyle: {
-          height: 86, paddingTop: 6, backgroundColor: colors.card,
-          borderTopWidth: 0.5, borderTopColor: colors.border
-        },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
-        tabBarIcon: ({ focused, color, size }) => (
-          <Ionicons name={(focused ? ICONS[route.name][0] : ICONS[route.name][1]) as any} size={size} color={color} />
-        )
+        tabBarStyle: styles.bar,
+        tabBarItemStyle: styles.item,
+        tabBarIcon: ({ focused }) => <TabIcon route={route.name} focused={focused} />
       })}
     >
       <Tab.Screen name="HomeTab" component={Home} options={{ title: 'Home' }} />
@@ -42,3 +49,27 @@ export default function MainTabs() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  // Tab bar flottante arrotondata, staccata dai bordi
+  bar: {
+    position: 'absolute',
+    left: 18, right: 18, bottom: 22,
+    height: 68,
+    borderRadius: radius.full,
+    backgroundColor: colors.card,
+    borderTopWidth: 0,
+    paddingHorizontal: 10,
+    ...shadowStrong,
+    shadowOpacity: 0.16
+  },
+  item: { height: 68 },
+  iconWrap: {
+    width: 48, height: 48, borderRadius: 24,
+    alignItems: 'center', justifyContent: 'center'
+  },
+  iconWrapActive: {
+    backgroundColor: colors.primary,
+    ...shadowStrong
+  }
+});

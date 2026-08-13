@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import Screen from '../../components/ui/Screen';
@@ -42,7 +42,7 @@ export default function Profile() {
 
   return (
     <Screen pad={false}>
-      <ScrollView contentContainerStyle={{ padding: spacing(4), paddingBottom: spacing(16) }}
+      <ScrollView contentContainerStyle={{ padding: spacing(4), paddingBottom: spacing(28) }}
         showsVerticalScrollIndicator={false}>
         {/* Intestazione */}
         <View style={styles.headerCard}>
@@ -52,7 +52,7 @@ export default function Profile() {
           {!verified && (
             <Pressable style={styles.unverified}
               onPress={() => { hapticTap(); nav.navigate('BankVerification', { fromProfile: true }); }}>
-              <Ionicons name="alert-circle" size={13} color={colors.warning} />
+              <MaterialCommunityIcons name="alert-circle" size={13} color={colors.warning} />
               <Text style={styles.unverifiedText}>{t('profile.notVerified')}</Text>
             </Pressable>
           )}
@@ -69,23 +69,22 @@ export default function Profile() {
 
         {/* Account */}
         <Section>
-          <Row icon="person" tint={colors.primary} soft={colors.primarySoft} label={t('profile.personalData')} />
-          <Row icon="card" tint={colors.success} soft={colors.successSoft} label={t('profile.paymentMethods')} />
-          <Row icon="notifications" tint={colors.warning} soft={colors.warningSoft} label={t('profile.notifications')} />
-          <Row icon="globe" tint={colors.info} soft={colors.infoSoft} label={t('profile.language')}
+          <Row icon="account" label={t('profile.personalData')} onPress={() => nav.navigate('PersonalData')} />
+          <Row icon="credit-card" label={t('profile.paymentMethods')} onPress={() => nav.navigate('PaymentMethods')} />
+          <Row icon="bell" label={t('profile.notifications')} onPress={() => nav.navigate('NotificationPreferences')} />
+          <Row icon="translate" label={t('profile.language')}
             value={i18n.language === 'ar' ? 'العربية' : 'English'} onPress={toggleLanguage} />
-          <Row icon="shield-checkmark" tint={verified ? colors.success : colors.warning}
-            soft={verified ? colors.successSoft : colors.warningSoft} label={t('profile.bankStatus')}
+          <Row icon="shield-check" label={t('profile.bankStatus')}
             value={verified ? t('profile.verified') : t('profile.notVerified')}
             onPress={() => nav.navigate('BankVerification', { fromProfile: true })} last />
         </Section>
 
         {/* Supporto */}
         <Section>
-          <Row icon="help-buoy" tint={colors.info} soft={colors.infoSoft} label={t('profile.support')} />
-          <Row icon="lock-closed" tint={colors.sub} soft={colors.bg} label={t('profile.privacy')} />
-          <Row icon="gift" tint={colors.danger} soft={colors.dangerSoft} label={t('profile.referral')} />
-          <Row icon="settings" tint={colors.sub} soft={colors.bg} label={t('profile.settings')} last />
+          <Row icon="lifebuoy" label={t('profile.support')} />
+          <Row icon="lock" label={t('profile.privacy')} onPress={() => nav.navigate('PrivacyPolicy')} />
+          <Row icon="gift" label={t('profile.referral')} onPress={() => nav.navigate('InviteFriend')} />
+          <Row icon="cog" label={t('profile.settings')} onPress={() => nav.navigate('AccountSettings')} last />
         </Section>
 
         {/* Nota conformità privacy (PDPL) */}
@@ -93,9 +92,9 @@ export default function Profile() {
 
         {/* Azioni distruttive */}
         <Section>
-          <Row icon="log-out" tint={colors.danger} soft={colors.dangerSoft} label={t('profile.logout')}
+          <Row icon="logout" label={t('profile.logout')}
             danger onPress={() => { hapticTap(); logout(); }} />
-          <Row icon="trash" tint={colors.danger} soft={colors.dangerSoft} label={t('profile.deleteAccount')}
+          <Row icon="trash-can" label={t('profile.deleteAccount')}
             danger onPress={confirmDelete} last />
         </Section>
       </ScrollView>
@@ -116,10 +115,11 @@ function Section({ children }: { children: React.ReactNode }) {
   return <View style={styles.section}>{children}</View>;
 }
 
-function Row({ icon, tint, soft, label, value, danger, last, onPress }: {
-  icon: string; tint: string; soft: string; label: string;
+function Row({ icon, label, value, danger, last, onPress }: {
+  icon: string; label: string;
   value?: string; danger?: boolean; last?: boolean; onPress?: () => void;
 }) {
+  // Trattamento uniforme: icona azzurra su tessera chiara (come il riferimento)
   return (
     <Pressable
       onPress={onPress ? () => { hapticTap(); onPress(); } : undefined}
@@ -127,13 +127,13 @@ function Row({ icon, tint, soft, label, value, danger, last, onPress }: {
       accessibilityLabel={label}
       style={({ pressed }) => [styles.row, pressed && onPress ? { backgroundColor: colors.bg } : null]}
     >
-      <View style={[styles.rowIcon, { backgroundColor: soft }]}>
-        <Ionicons name={icon as any} size={17} color={tint} />
+      <View style={styles.rowIcon}>
+        <MaterialCommunityIcons name={icon as any} size={18} color={colors.primary} />
       </View>
       <View style={[styles.rowInner, !last && styles.rowSep]}>
         <Text style={[styles.rowLabel, danger && { color: colors.danger }]} numberOfLines={1}>{label}</Text>
         {value && <Text style={[g.small, { marginEnd: 6 }]}>{value}</Text>}
-        {!danger && <Ionicons name="chevron-forward" size={17} color={colors.border} />}
+        {!danger && <MaterialCommunityIcons name="chevron-right" size={20} color={colors.sub} />}
       </View>
     </Pressable>
   );
@@ -159,8 +159,8 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', paddingStart: spacing(4), minHeight: 48 },
   rowIcon: {
-    width: 30, height: 30, borderRadius: 7, alignItems: 'center', justifyContent: 'center',
-    marginEnd: spacing(3)
+    width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+    marginEnd: spacing(3), backgroundColor: colors.primarySoft
   },
   rowInner: {
     flex: 1, flexDirection: 'row', alignItems: 'center', minHeight: 48, paddingEnd: spacing(3)
