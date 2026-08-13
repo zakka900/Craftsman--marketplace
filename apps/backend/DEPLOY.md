@@ -66,7 +66,8 @@ Checklist passo-passo. Tempo stimato: ~30 minuti.
    | `JWT_SECRET` | il segreto generato |
    | `STRIPE_SECRET_KEY` | `sk_test_...` |
    | `STRIPE_WEBHOOK_SECRET` | vedi punto C6 |
-   | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | dal provider email (es. Resend) |
+   | `BREVO_API_KEY` | dashboard Brevo → SMTP & API → API Keys |
+   | `MAIL_FROM` | mittente verificato su Brevo (es. `Artisan <no-reply@tuodominio.com>`) |
    | `NODE_ENV` | `production` |
 
    `PORT` la inietta Railway automaticamente: non impostarla.
@@ -79,9 +80,11 @@ Checklist passo-passo. Tempo stimato: ~30 minuti.
 
 ## D) Email (verifica account)
 
-Consigliato: [resend.com](https://resend.com) (gratis fino a 3.000 email/mese, ha SMTP):
-Settings → SMTP → `SMTP_HOST=smtp.resend.com`, `SMTP_PORT=587`, `SMTP_USER=resend`, `SMTP_PASS=<api key>`.
-Senza SMTP configurato i codici OTP finiscono solo nei log (va bene per lo sviluppo).
+Provider: [brevo.com](https://www.brevo.com) (gratis fino a 300 email/giorno).
+Dashboard → **SMTP & API → API Keys** → crea una chiave → `BREVO_API_KEY` nel `.env`.
+Importante: il mittente in `MAIL_FROM` deve essere un'email/dominio **verificato** su Brevo
+(Dashboard → Senders, Domains & Dedicated IPs), altrimenti l'invio fallisce.
+Senza `BREVO_API_KEY` configurata i codici OTP finiscono solo nei log (va bene per lo sviluppo).
 
 ---
 
