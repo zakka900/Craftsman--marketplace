@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -43,9 +43,15 @@ export default function Payment() {
 
   const pay = async () => {
     setLoading(true);
-    const { receiptId } = await payDeposit(contract.id);
-    setLoading(false);
-    setReceipt(receiptId);
+    try {
+      const { receiptId } = await payDeposit(contract.id);
+      setReceipt(receiptId);
+    } catch (err: any) {
+      // 'CANCELLED' = utente ha chiuso il foglio Stripe: nessun messaggio
+      if (err?.message !== 'CANCELLED') Alert.alert('', t('common.error'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (receipt) {

@@ -1,10 +1,11 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { CATEGORIES, JobRequest } from '@artisan/shared';
+import { JobRequest } from '@artisan/shared';
 import { getArtisan, getQuotes } from '../../services/api';
-import { colors, g, pastel, pastelText, radius, shadow } from '../../theme';
+import { colors, g, radius, shadow } from '../../theme';
+import { catIcon } from '../../theme/categoryIcons';
 import { shortDate, money } from '../../utils/format';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -21,7 +22,6 @@ export default function RequestCard({ request, onPress, wide }: {
   request: JobRequest; onPress: () => void; wide?: boolean;
 }) {
   const { t } = useTranslation();
-  const cat = CATEGORIES.find((c) => c.id === request.categoryId);
   const quotes = getQuotes(request.id);
   const artisan = request.artisanId ? getArtisan(request.artisanId) : null;
   const statusText = request.status === 'quotes_received'
@@ -30,8 +30,8 @@ export default function RequestCard({ request, onPress, wide }: {
   return (
     <Pressable onPress={onPress} style={[styles.card, wide ? { width: '100%' } : { width: 260, marginEnd: 12 }]}>
       <View style={[g.row, { justifyContent: 'space-between' }]}>
-        <View style={[styles.catIcon, { backgroundColor: pastel[cat?.colorIndex || 0] }]}>
-          <Ionicons name={(cat?.icon as any) || 'construct'} size={20} color={pastelText[cat?.colorIndex || 0]} />
+        <View style={[styles.catIcon, { backgroundColor: colors.primarySoft }]}>
+          <MaterialCommunityIcons name={catIcon(request.categoryId)} size={22} color={colors.primary} />
         </View>
         <Text style={g.small}>{shortDate(request.createdAt)}</Text>
       </View>
@@ -58,8 +58,8 @@ export default function RequestCard({ request, onPress, wide }: {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 16, ...shadow, marginBottom: 12 },
-  catIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 18, ...shadow, marginBottom: 12 },
+  catIcon: { width: 42, height: 42, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   status: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, gap: 6 },
   dot: { width: 7, height: 7, borderRadius: 4 }
 });

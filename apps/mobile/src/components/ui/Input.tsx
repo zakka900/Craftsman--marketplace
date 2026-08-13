@@ -34,11 +34,11 @@ export default function Input({ label, error, isPassword, style, ...rest }: Prop
 }
 
 const styles = StyleSheet.create({
-  label: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 6 },
+  label: { fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 8, marginStart: 4 },
   wrap: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card,
-    borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 14
+    borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 16
   },
-  input: { flex: 1, height: 50, fontSize: 15, color: colors.text, textAlign: 'auto' },
+  input: { flex: 1, height: 54, fontSize: 16, color: colors.text, textAlign: 'auto' },
   error: { color: colors.danger, fontSize: 12, marginTop: 4 }
 });

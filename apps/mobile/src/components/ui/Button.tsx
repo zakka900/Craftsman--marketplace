@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius } from '../../theme';
+import { colors, radius, shadowStrong } from '../../theme';
 import { hapticTap } from '../../utils/haptics';
 
 interface Props {
@@ -21,8 +21,9 @@ interface Props {
 export default function Button({ title, onPress, variant = 'primary', loading, disabled, icon, style }: Props) {
   const isPrimary = variant === 'primary';
   const isDanger = variant === 'danger';
-  const bg = disabled ? '#C7C7CC' : isPrimary ? colors.primary : isDanger ? colors.danger : 'transparent';
-  const fg = isPrimary || isDanger ? '#fff' : colors.primary;
+  const isFilled = isPrimary || isDanger;
+  const bg = disabled ? '#C3CAD9' : isPrimary ? colors.primary : isDanger ? colors.danger : 'transparent';
+  const fg = isFilled ? '#fff' : colors.primary;
   const scale = useRef(new Animated.Value(1)).current;
 
   const pressIn = () => {
@@ -44,8 +45,10 @@ export default function Button({ title, onPress, variant = 'primary', loading, d
         accessibilityState={{ disabled: !!disabled, busy: !!loading }}
         style={({ pressed }) => [
           styles.btn,
-          { backgroundColor: bg, opacity: pressed && !isPrimary && !isDanger ? 0.6 : 1 },
+          { backgroundColor: bg, opacity: pressed && !isFilled ? 0.6 : 1 },
+          isFilled && !disabled && shadowStrong,
           variant === 'outline' && { borderWidth: 1.5, borderColor: colors.primary },
+          variant === 'ghost' && { backgroundColor: colors.primarySoft },
           style
         ]}
       >
@@ -54,7 +57,7 @@ export default function Button({ title, onPress, variant = 'primary', loading, d
         ) : (
           <>
             {icon && <Ionicons name={icon} size={18} color={fg} style={{ marginEnd: 8 }} />}
-            <Text style={{ color: fg, fontWeight: '600', fontSize: 17, letterSpacing: -0.41 }}>{title}</Text>
+            <Text style={{ color: fg, fontWeight: '700', fontSize: 17, letterSpacing: -0.2 }}>{title}</Text>
           </>
         )}
       </Pressable>
@@ -64,7 +67,7 @@ export default function Button({ title, onPress, variant = 'primary', loading, d
 
 const styles = StyleSheet.create({
   btn: {
-    height: 52, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
-    flexDirection: 'row', paddingHorizontal: 20
+    height: 54, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', paddingHorizontal: 22
   }
 });

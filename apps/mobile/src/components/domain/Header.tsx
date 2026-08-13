@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store';
 import Avatar from '../ui/Avatar';
-import { colors } from '../../theme';
+import { colors, radius, shadow } from '../../theme';
 
 /** Header ricorrente: avatar + "Ciao, [Nome]" a sinistra, campanella con badge a destra. */
 export default function Header() {
@@ -39,11 +39,14 @@ export default function Header() {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
   left: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  hello: { fontSize: 18, fontWeight: '700', color: colors.text },
+  hello: { fontSize: 20, fontWeight: '800', color: colors.text, letterSpacing: 0.1 },
   badge: { fontSize: 11, color: colors.warning, fontWeight: '600' },
-  bell: { padding: 4 },
+  bell: {
+    width: 46, height: 46, borderRadius: radius.md, backgroundColor: colors.card,
+    alignItems: 'center', justifyContent: 'center', ...shadow
+  },
   counter: {
-    position: 'absolute', top: 0, end: 0, backgroundColor: colors.danger, borderRadius: 9,
+    position: 'absolute', top: 6, end: 6, backgroundColor: colors.danger, borderRadius: 9,
     minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3
   },
   counterText: { color: '#fff', fontSize: 10, fontWeight: '700' }

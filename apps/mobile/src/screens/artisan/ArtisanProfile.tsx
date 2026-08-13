@@ -111,8 +111,8 @@ export default function ArtisanProfile() {
       {/* CTA fisse: richiesta diretta + chat */}
       <View style={styles.footer}>
         <Button title={t('artisan.chat')} variant="outline" style={{ flex: 1 }}
-          onPress={() => {
-            const conv = openConversation(a.id);
+          onPress={async () => {
+            const conv = await openConversation(a.id);
             nav.navigate('ChatRoom', { conversationId: conv.id });
           }} />
         <Button title={t('artisan.directRequest')} style={{ flex: 1.6 }}

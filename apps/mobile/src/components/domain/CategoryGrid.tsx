@@ -1,9 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { CATEGORIES } from '@artisan/shared';
-import { colors, pastel, pastelText, radius } from '../../theme';
+import { colors, radius, shadow } from '../../theme';
+import { catIcon } from '../../theme/categoryIcons';
 import { hapticSelect } from '../../utils/haptics';
 
 interface Props {
@@ -28,10 +29,9 @@ export default function CategoryGrid({ onSelect, selected, compact }: Props) {
           >
             <View style={[
               styles.icon,
-              { backgroundColor: pastel[c.colorIndex] },
-              isSel && { borderWidth: 2, borderColor: colors.primary }
+              isSel && { backgroundColor: colors.primary }
             ]}>
-              <Ionicons name={c.icon as any} size={26} color={pastelText[c.colorIndex]} />
+              <MaterialCommunityIcons name={catIcon(c.id)} size={28} color={isSel ? '#fff' : colors.primary} />
             </View>
             <Text style={[styles.label, isSel && { color: colors.primary, fontWeight: '700' }]} numberOfLines={1}>
               {t(`categories.${c.id}`)}
@@ -47,8 +47,8 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   item: { width: '18%', alignItems: 'center', marginBottom: 18 },
   icon: {
-    width: 56, height: 56, borderRadius: radius.md + 2,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 6
+    width: 58, height: 58, borderRadius: radius.lg, backgroundColor: colors.primarySoft,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 8, ...shadow
   },
-  label: { fontSize: 11, color: colors.text, textAlign: 'center' }
+  label: { fontSize: 11, color: colors.sub, textAlign: 'center', fontWeight: '500' }
 });

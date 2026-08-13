@@ -62,40 +62,7 @@ export const ARTISANS: Artisan[] = [
   }
 ];
 
-// Suggerimenti AI (mock) per descrizione testo, per categoria.
-// PROVIDER REALE: sostituire con chiamata backend /ai/analyze-text (Claude API).
-export const AI_TEXT_HINTS: Record<string, string[]> = {
-  plumber: [
-    'Specify if the leak is visible or hidden behind a wall',
-    'Say how long the problem has been happening',
-    'Mention if you can shut off the main water valve'
-  ],
-  electrician: [
-    'Specify which rooms or circuits are affected',
-    'Mention if the breaker trips and how often',
-    'Add the approximate age of the electrical system'
-  ],
-  renovation: [
-    'Add approximate square meters of the area',
-    'Specify if you already have materials or need supply',
-    'Mention your preferred start date'
-  ],
-  hvac: [
-    'Specify AC brand and unit type (split/central)',
-    'Mention if the unit cools weakly or not at all'
-  ],
-  painter: [
-    'Add number of rooms and approximate wall area',
-    'Specify if walls need repair before painting'
-  ],
-  default: [
-    'Add measurements or dimensions if relevant',
-    'Specify preferred timing for the work',
-    'Mention building/floor access details'
-  ]
-};
-
-// Suggerimenti AI (mock) per foto, per categoria.
+// Suggerimenti AI (mock) per foto, per categoria — l'analisi testo ora è reale (vedi /ai/analyze-text).
 export const AI_PHOTO_HINTS: Record<string, string[]> = {
   plumber: ['Add a photo of the water meter area', 'Add a wide shot of the whole bathroom/kitchen'],
   electrician: ['Add a photo of the electrical panel from a distance', 'Add a close-up of the faulty socket/switch'],

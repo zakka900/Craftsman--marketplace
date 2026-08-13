@@ -37,9 +37,9 @@ export default function JobTracking() {
           <Ionicons name="arrow-back" size={26} color={colors.text} />
         </Pressable>
         <Text style={g.h2}>{t('job.title')}</Text>
-        <Pressable hitSlop={10} onPress={() => {
+        <Pressable hitSlop={10} onPress={async () => {
           if (!artisan) return;
-          const conv = openConversation(artisan.id, request.id);
+          const conv = await openConversation(artisan.id, request.id);
           nav.navigate('ChatRoom', { conversationId: conv.id });
         }}>
           <Ionicons name="chatbubble-ellipses" size={24} color={colors.primary} />

@@ -15,7 +15,7 @@ import Avatar from '../../components/ui/Avatar';
 import EmptyState from '../../components/feedback/EmptyState';
 import { getRequests, getShowcase, searchArtisans } from '../../services/api';
 import { useLive } from '../../hooks/useLive';
-import { colors, g, radius, shadow } from '../../theme';
+import { colors, g, radius, shadow, shadowStrong } from '../../theme';
 
 export default function Home() {
   const { t } = useTranslation();
@@ -146,30 +146,30 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  // Campo di ricerca stile iOS: superficie piena, senza bordo
+  // Campo di ricerca: pastiglia bianca morbida con ombra tenue
   searchWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card,
-    borderRadius: radius.md, paddingHorizontal: 14, height: 44
+    flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card,
+    borderRadius: radius.full, paddingHorizontal: 18, height: 54, marginTop: 4, ...shadow
   },
-  searchInput: { flex: 1, fontSize: 17, color: colors.text, letterSpacing: -0.41 },
-  results: { backgroundColor: colors.card, borderRadius: radius.md, marginTop: 6, ...shadow },
+  searchInput: { flex: 1, fontSize: 16, color: colors.text, letterSpacing: -0.2 },
+  results: { backgroundColor: colors.card, borderRadius: radius.lg, marginTop: 8, ...shadow },
   resultRow: {
     flexDirection: 'row', alignItems: 'center', padding: 12,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border
   },
   publishBox: {
-    flexDirection: 'row', backgroundColor: colors.primary, borderRadius: radius.lg,
-    padding: 18, marginTop: 16, alignItems: 'center', ...shadow
+    flexDirection: 'row', backgroundColor: colors.primary, borderRadius: radius.xl,
+    padding: 22, marginTop: 18, alignItems: 'center', ...shadowStrong
   },
-  publishTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  publishSub: { color: 'rgba(255,255,255,0.85)', fontSize: 13, marginTop: 4 },
+  publishTitle: { color: '#fff', fontSize: 19, fontWeight: '800' },
+  publishSub: { color: 'rgba(255,255,255,0.88)', fontSize: 13, marginTop: 4 },
   publishCta: {
     flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff',
-    alignSelf: 'flex-start', borderRadius: 99, paddingHorizontal: 14, paddingVertical: 8, marginTop: 12
+    alignSelf: 'flex-start', borderRadius: 99, paddingHorizontal: 16, paddingVertical: 9, marginTop: 14
   },
   publishIcon: { marginStart: 10, opacity: 0.9 },
   baCard: {
-    width: 280, backgroundColor: colors.card, borderRadius: radius.lg, marginEnd: 12,
+    width: 280, backgroundColor: colors.card, borderRadius: radius.lg, marginEnd: 14,
     overflow: 'hidden', ...shadow, marginBottom: 8
   },
   baImg: { width: 140, height: 100 }

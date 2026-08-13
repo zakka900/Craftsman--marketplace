@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, shadow } from '../../theme';
+import { colors, shadowStrong } from '../../theme';
 import { hapticTap } from '../../utils/haptics';
 
 /** Bottone flottante "+" per creare una nuova richiesta. */
@@ -16,8 +16,7 @@ export default function FAB({ onPress }: { onPress: () => void }) {
 
 const styles = StyleSheet.create({
   fab: {
-    position: 'absolute', bottom: 24, end: 20, width: 58, height: 58, borderRadius: 29,
-    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...shadow,
-    shadowOpacity: 0.25, elevation: 6
+    position: 'absolute', bottom: 104, end: 20, width: 60, height: 60, borderRadius: 30,
+    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...shadowStrong
   }
 });
