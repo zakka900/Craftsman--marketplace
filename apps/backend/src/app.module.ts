@@ -12,6 +12,9 @@ import { BankVerificationModule } from './modules/bank-verification.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ChatModule } from './modules/chat.gateway';
 import { NotificationsModule } from './modules/notifications.module';
+import { AdminModule } from './modules/admin.module';
+import { AiModule } from './modules/ai/ai.module';
+import { TranslationModule } from './modules/translation/translation.module';
 
 @Global()
 @Module({
@@ -28,7 +31,10 @@ import { NotificationsModule } from './modules/notifications.module';
     BankVerificationModule,
     PaymentsModule,
     ChatModule,
-    NotificationsModule
+    NotificationsModule,
+    AdminModule,
+    AiModule,
+    TranslationModule
   ],
   providers: [PrismaService],
   exports: [PrismaService]

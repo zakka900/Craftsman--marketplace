@@ -6,10 +6,11 @@
  */
 import {
   Body, ConflictException, Controller, ForbiddenException, Injectable, Module,
-  NotFoundException, Post, UnauthorizedException
+  NotFoundException, Post, UnauthorizedException, UseGuards
 } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, Length, MinLength } from 'class-validator';
 import * as bcrypt from 'bcryptjs'; // pure JS: nessuna build nativa (deploy più affidabile)
 import { createHash, randomInt } from 'crypto';
@@ -57,8 +58,9 @@ export class AuthService {
     private config: ConfigService
   ) {}
 
-  private sign(user: { id: string; email: string }) {
-    return this.jwt.sign({ sub: user.id, email: user.email });
+  private sign(user: { id: string; email: string; role: string }) {
+    // role incluso nel claim: evita una query DB ad ogni richiesta protetta da RolesGuard
+    return this.jwt.sign({ sub: user.id, email: user.email, role: user.role });
   }
 
   private safe(user: any) {
@@ -96,10 +98,16 @@ export class AuthService {
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing?.emailVerified) throw new ConflictException('EMAIL_EXISTS');
 
+    const phone = dto.phone?.trim() || null;
+    if (phone) {
+      const phoneOwner = await this.prisma.user.findUnique({ where: { phone } });
+      if (phoneOwner && phoneOwner.id !== existing?.id) throw new ConflictException('PHONE_EXISTS');
+    }
+
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const data = {
       firstName: dto.firstName.trim(), lastName: dto.lastName.trim(),
-      email, phone: dto.phone?.trim() || null, country: dto.country, passwordHash
+      email, phone, country: dto.country, passwordHash
     };
     const user = existing
       ? await this.prisma.user.update({ where: { id: existing.id }, data })
@@ -164,7 +172,12 @@ export class AuthController {
 
   @Post('register') register(@Body() dto: RegisterDto) { return this.service.register(dto); }
   @Post('otp/resend') resend(@Body('email') email: string) { return this.service.resendOtp(email); }
+
+  // Rate limiting: 5 tentativi / minuto per IP — mitiga brute-force su codice OTP e password
+  @UseGuards(ThrottlerGuard)
   @Post('otp/verify') verify(@Body() dto: VerifyOtpDto) { return this.service.verifyOtp(dto); }
+
+  @UseGuards(ThrottlerGuard)
   @Post('login') login(@Body() dto: LoginDto) { return this.service.login(dto); }
   @Post('password/forgot') forgot(@Body('email') email: string) { return this.service.forgotPassword(email); }
   @Post('password/reset') reset(@Body() dto: ResetPasswordDto) { return this.service.resetPassword(dto); }
@@ -181,7 +194,9 @@ export class AuthController {
         secret: config.getOrThrow<string>('JWT_SECRET'), // nessun fallback hardcoded
         signOptions: { expiresIn: config.get<string>('JWT_EXPIRES') ?? '7d' }
       })
-    })
+    }),
+    // 5 richieste / 60s per IP sulle rotte che usano ThrottlerGuard (login, otp/verify)
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 5 }])
   ],
   controllers: [AuthController],
   providers: [AuthService, MailService],

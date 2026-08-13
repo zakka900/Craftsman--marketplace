@@ -23,6 +23,13 @@ enum Country {
   KW
 }
 
+// Solo CLIENT e ADMIN in questa fase: nessuna app/auth per artigiani ancora,
+// il valore ARTISAN verrà aggiunto quando esisterà l'app dedicata.
+enum Role {
+  CLIENT
+  ADMIN
+}
+
 // Verifica SOLO via email (niente SMS)
 enum OtpPurpose {
   VERIFY_EMAIL
@@ -101,6 +108,7 @@ model User {
   email         String   @unique
   phone         String?  @unique // opzionale: verifica solo via email
   country       Country
+  role          Role     @default(CLIENT)
   passwordHash  String?
   socialId      String? // Google/Apple sub
   emailVerified Boolean  @default(false)
@@ -350,6 +358,20 @@ model Message {
   createdAt      DateTime     @default(now())
 
   @@index([conversationId, createdAt])
+}
+
+// Cache traduzioni AI: testo originale sempre conservato, traduzione riusata
+// per lo stesso testo+lingua target invece di richiamare l'AI ogni volta.
+model Translation {
+  id             String   @id @default(cuid())
+  sourceHash     String // sha256(testo originale)
+  targetLang     String
+  sourceLang     String?
+  sourceText     String
+  translatedText String
+  createdAt      DateTime @default(now())
+
+  @@unique([sourceHash, targetLang])
 }
 
 model Notification {
