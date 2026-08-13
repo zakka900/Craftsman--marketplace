@@ -6,6 +6,7 @@ import {
 import { IsNotEmpty, IsString } from 'class-validator';
 import { PrismaService } from '../prisma.service';
 import { CurrentUser, JwtAuthGuard } from '../common/jwt-auth.guard';
+import { buildTransitionOps } from '../common/job-state-machine';
 
 /** Valuta per paese del cliente. */
 export const CURRENCY: Record<string, string> = { SA: 'SAR', AE: 'AED', QA: 'QAR', KW: 'KWD' };
@@ -36,12 +37,10 @@ export class ContractsService {
           scope: quote.request.description.slice(0, 500), days: quote.days
         }
       }),
-      this.prisma.request.update({
-        where: { id: quote.requestId }, data: { status: 'ARTISAN_SELECTED' }
-      }),
-      this.prisma.requestEvent.create({
-        data: { requestId: quote.requestId, type: 'stage', text: 'Artisan selected — contract created' }
-      })
+      ...buildTransitionOps(
+        this.prisma, quote.requestId, quote.request.status, 'ARTISAN_SELECTED',
+        'Artisan selected — contract created'
+      )
     ]);
     return contract;
   }

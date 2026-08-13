@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { PrismaService } from '../../prisma.service';
 import { PaymentIntentResult, PaymentService } from './payment-service.interface';
+import { assertTransition } from '../../common/job-state-machine';
 
 /** Valute a 3 decimali (Stripe le tratta in millesimi). AED/SAR/QAR = 2 decimali. */
 const THREE_DECIMALS = new Set(['kwd', 'bhd', 'omr']);
@@ -84,9 +85,10 @@ export class StripeService extends PaymentService {
   private async onPaymentSucceeded(intent: Stripe.PaymentIntent) {
     const payment = await this.prisma.payment.findUnique({
       where: { providerId: intent.id },
-      include: { contract: true }
+      include: { contract: { include: { request: true } } }
     });
     if (!payment) { this.logger.warn(`Payment non trovato per ${intent.id}`); return; }
+    assertTransition(payment.contract.request.status, 'IN_PROGRESS');
 
     await this.prisma.$transaction([
       // Fondi incassati e trattenuti in escrow fino a conferma del cliente
@@ -98,6 +100,9 @@ export class StripeService extends PaymentService {
       this.prisma.request.update({
         where: { id: payment.contract.requestId },
         data: { status: 'IN_PROGRESS', stage: 'CONFIRMED' }
+      }),
+      this.prisma.requestEvent.create({
+        data: { requestId: payment.contract.requestId, type: 'stage', text: 'Deposit received — work confirmed' }
       }),
       this.prisma.notification.create({
         data: {

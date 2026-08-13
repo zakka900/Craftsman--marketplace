@@ -9,6 +9,7 @@ import {
 import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
 import { PrismaService } from '../prisma.service';
 import { CurrentUser, JwtAuthGuard } from '../common/jwt-auth.guard';
+import { buildTransitionOps } from '../common/job-state-machine';
 
 export class SubmitQuoteDto {
   @IsString() @IsNotEmpty() requestId!: string;
@@ -48,10 +49,10 @@ export class QuotesService {
       include: { artisan: true }
     });
     await this.prisma.$transaction([
-      this.prisma.request.update({ where: { id: dto.requestId }, data: { status: 'QUOTES_RECEIVED' } }),
-      this.prisma.requestEvent.create({
-        data: { requestId: dto.requestId, type: 'quote', text: `New quote from ${quote.artisan.name}` }
-      }),
+      ...buildTransitionOps(
+        this.prisma, dto.requestId, req.status, 'QUOTES_RECEIVED',
+        `New quote from ${quote.artisan.name}`, 'quote'
+      ),
       this.prisma.notification.create({
         data: {
           userId: req.clientId, type: 'QUOTE', title: 'New quote received',

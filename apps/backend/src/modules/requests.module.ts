@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 import { PrismaService } from '../prisma.service';
 import { CurrentUser, JwtAuthGuard } from '../common/jwt-auth.guard';
+import { assertTransition, buildTransitionOps } from '../common/job-state-machine';
 
 export class CreateRequestDto {
   @IsString() @IsNotEmpty() categoryId!: string;
@@ -98,15 +99,17 @@ export class RequestsService {
 
   async cancel(userId: string, id: string) {
     const req = await this.own(userId, id);
-    if (['COMPLETED', 'CANCELLED', 'IN_PROGRESS'].includes(req.status))
-      throw new BadRequestException('CANNOT_CANCEL');
-    return this.prisma.request.update({ where: { id }, data: { status: 'CANCELLED' } });
+    assertTransition(req.status, 'CANCELLED');
+    await this.prisma.$transaction(
+      buildTransitionOps(this.prisma, id, req.status, 'CANCELLED', 'Request cancelled by client')
+    );
+    return this.getById(userId, id);
   }
 
   /** Conferma completamento: stato COMPLETED + rilascio del pagamento in escrow. */
   async confirmCompletion(userId: string, id: string) {
     const req = await this.own(userId, id);
-    if (req.status !== 'IN_PROGRESS') throw new BadRequestException('NOT_IN_PROGRESS');
+    assertTransition(req.status, 'COMPLETED');
 
     const contract = await this.prisma.contract.findUnique({ where: { requestId: id }, include: { payment: true } });
     const ops: any[] = [
@@ -123,13 +126,12 @@ export class RequestsService {
 
   async openDispute(userId: string, id: string, dto: DisputeDto) {
     const req = await this.own(userId, id);
-    if (req.status !== 'IN_PROGRESS') throw new BadRequestException('NOT_IN_PROGRESS');
+    assertTransition(req.status, 'DISPUTED');
     await this.prisma.$transaction([
       this.prisma.dispute.create({
         data: { requestId: id, clientId: userId, reason: dto.reason, description: dto.description, photos: dto.photos ?? [] }
       }),
-      this.prisma.request.update({ where: { id }, data: { status: 'DISPUTED' } }),
-      this.prisma.requestEvent.create({ data: { requestId: id, type: 'dispute', text: `Dispute opened: ${dto.reason}` } })
+      ...buildTransitionOps(this.prisma, id, req.status, 'DISPUTED', `Dispute opened: ${dto.reason}`, 'dispute')
     ]);
     return { ok: true };
   }
