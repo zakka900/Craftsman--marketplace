@@ -27,7 +27,7 @@ export default function ChatList() {
       {convs.length === 0 ? (
         <EmptyState icon="chatbubbles-outline" title={t('chat.empty')} subtitle={t('chat.emptySub')} />
       ) : (
-        <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 110 }}>
           {convs.map((c) => {
             const a = getArtisan(c.artisanId);
             if (!a) return null;
@@ -41,9 +41,12 @@ export default function ChatList() {
                     <Text style={g.small}>{timeAgo(c.lastDate)}</Text>
                   </View>
                   <View style={[g.row, { justifyContent: 'space-between', marginTop: 2 }]}>
-                    <Text style={[g.small, c.unread > 0 && { color: colors.text, fontWeight: '600' }]}
-                      numberOfLines={1}>
-                      {c.lastMessage}
+                    <Text style={[
+                      g.small,
+                      c.unread > 0 && { color: colors.text, fontWeight: '600' },
+                      c.artisanTyping && { color: colors.primary, fontWeight: '600' }
+                    ]} numberOfLines={1}>
+                      {c.artisanTyping ? t('chat.typing') : c.lastMessage}
                     </Text>
                     {c.unread > 0 && (
                       <View style={styles.badge}>

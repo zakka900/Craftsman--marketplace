@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
@@ -14,16 +14,22 @@ export default function Step2Description({ onNext }: { onNext: () => void }) {
   const { t } = useTranslation();
   const { draft, patch } = useDraftStore();
   const [textHints, setTextHints] = useState<string[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
   const [photoHints, setPhotoHints] = useState<string[]>([]);
   const debounce = useRef<any>(null);
 
   // Analisi AI del testo mentre l'utente scrive (debounce 1.2s)
   useEffect(() => {
     clearTimeout(debounce.current);
-    if (draft.description.trim().length < 15) { setTextHints([]); return; }
+    if (draft.description.trim().length < 3) { setTextHints([]); setAiLoading(false); return; }
     debounce.current = setTimeout(async () => {
-      const hints = await aiAnalyzeText(draft.categoryId || 'default', draft.description);
-      setTextHints(hints);
+      setAiLoading(true);
+      try {
+        const hints = await aiAnalyzeText(draft.categoryId || 'default', draft.description);
+        setTextHints(hints);
+      } finally {
+        setAiLoading(false);
+      }
     }, 1200);
     return () => clearTimeout(debounce.current);
   }, [draft.description]);
@@ -63,6 +69,12 @@ export default function Step2Description({ onNext }: { onNext: () => void }) {
           value={draft.description}
           onChangeText={(description) => patch({ description })}
         />
+        {aiLoading && (
+          <View style={styles.aiLoadingRow}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={[g.small, { color: colors.primary }]}>{t('wizard.aiAnalyzing')}</Text>
+          </View>
+        )}
         <SuggestionChips title={t('wizard.aiHints')} hints={textHints} onPick={addHint} />
 
         {/* Upload foto/video multiplo con anteprima a griglia */}
@@ -101,6 +113,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', borderRadius: radius.md,
     paddingVertical: 16, marginTop: 16
   },
+  aiLoadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
   photoWrap: { position: 'relative' },
   photo: { width: 92, height: 92, borderRadius: radius.sm },

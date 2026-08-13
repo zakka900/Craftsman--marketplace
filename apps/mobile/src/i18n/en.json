@@ -34,6 +34,8 @@
     "errNotFound": "No account found with these credentials",
     "errWrongPassword": "Incorrect password. Try again or reset it",
     "errNotVerified": "Account not verified yet. Let's verify it now",
+    "errEmailExists": "This email is already registered. Please log in instead.",
+    "errPhoneExists": "This phone number is already registered to another account.",
     "pwRules": {
       "minLength": "At least 8 characters",
       "upper": "One uppercase letter",
@@ -117,6 +119,7 @@
     "s2Title": "Describe the job",
     "s2Placeholder": "Describe the job in detail...",
     "aiHints": "Tips to get better quotes",
+    "aiAnalyzing": "Analyzing your description...",
     "addPhotos": "Add photos / videos",
     "photoHints": "Photo suggestions",
     "s3Title": "Practical details",
@@ -240,7 +243,13 @@
     "empty": "No conversations",
     "emptySub": "Chats with artisans will appear here",
     "placeholder": "Write a message...",
-    "online": "Online", "typing": "Typing...", "seen": "Seen"
+    "online": "Online", "typing": "Typing...", "seen": "Seen",
+    "blockedTitle": "Contact details are hidden for now",
+    "blockedBody": "For your safety, phone numbers, emails and social/messaging links can't be shared here yet. They unlock automatically once you accept a quote from this artisan.",
+    "blockedOk": "Got it",
+    "translated": "🌐 Translated from {{lang}}",
+    "viewOriginal": "View original",
+    "viewTranslation": "View translation"
   },
   "profile": {
     "title": "Profile",
@@ -259,6 +268,42 @@
     "deleteAccount": "Delete account",
     "deleteConfirm": "Delete your account? This cannot be undone.",
     "verified": "Verified", "notVerified": "Not verified"
+  },
+  "personalData": {
+    "country": "Country", "countryNote": "Contact support to change your country.", "saved": "Saved"
+  },
+  "notifPrefs": {
+    "quotes": "New quotes", "quotesSub": "When an artisan sends you a quote",
+    "chat": "Chat messages", "chatSub": "New messages from artisans",
+    "jobUpdates": "Job updates", "jobUpdatesSub": "Status changes on your requests",
+    "promotions": "Promotions & news", "promotionsSub": "Offers and product updates"
+  },
+  "privacyPolicy": {
+    "dataWeCollectTitle": "Data we collect",
+    "dataWeCollectBody": "Your name, contact details, job requests, messages and payment records, only what's needed to run the marketplace.",
+    "howWeUseItTitle": "How we use it",
+    "howWeUseItBody": "To match you with artisans, process secure payments, prevent fraud and improve the service. We never sell your data.",
+    "yourRightsTitle": "Your rights",
+    "yourRightsBody": "You can access, correct or delete your personal data at any time from Profile → Delete account.",
+    "retentionTitle": "Data retention",
+    "retentionBody": "Job and payment history is kept as required by local regulation; deleted accounts are anonymized, not erased from completed transactions.",
+    "contactTitle": "Contact",
+    "contactBody": "Questions about your data? Reach us from Profile → Support."
+  },
+  "invite": {
+    "title": "Invite a friend",
+    "sub": "Share your code — they get help with their next home job, you get the credit.",
+    "yourCode": "Your code",
+    "share": "Share invite",
+    "shareMessage": "Join me on Artisan! Use my code {{code}} when you sign up."
+  },
+  "paymentMethods": {
+    "emptyTitle": "No saved cards",
+    "emptySub": "Cards aren't stored — you enter payment details securely at checkout, each time you confirm a job."
+  },
+  "accountSettings": {
+    "security": "Security",
+    "changePassword": "Change password"
   },
   "notifications": {
     "title": "Notifications",

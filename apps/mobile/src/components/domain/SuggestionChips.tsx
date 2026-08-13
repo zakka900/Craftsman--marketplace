@@ -32,12 +32,12 @@ export default function SuggestionChips({ title, hints, onPick, tone = 'ai' }: P
 }
 
 const styles = StyleSheet.create({
-  box: { borderRadius: radius.md, padding: 12, marginTop: 10 },
+  box: { borderRadius: radius.lg, padding: 14, marginTop: 10 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   title: { fontSize: 12, fontWeight: '700' },
   chip: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#fff', borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 9, marginTop: 6
+    backgroundColor: '#fff', borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 11, marginTop: 8
   },
   chipText: { fontSize: 13, color: colors.text, flex: 1, marginEnd: 8 }
 });

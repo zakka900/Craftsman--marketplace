@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View
+  Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -8,8 +8,9 @@ import { useTranslation } from 'react-i18next';
 import Screen from '../../components/ui/Screen';
 import Avatar from '../../components/ui/Avatar';
 import {
-  getArtisan, getConversations, getMessages, markConversationRead, sendMessage
+  getArtisan, getConversations, getMessages, markConversationRead, sendMessage, translateText
 } from '../../services/api';
+import { ApiError } from '../../services/http';
 import { useLive } from '../../hooks/useLive';
 import { colors, g, radius } from '../../theme';
 
@@ -18,8 +19,10 @@ import { colors, g, radius } from '../../theme';
  * indicatori "online / sta scrivendo / visto".
  * PROVIDER REALE: WebSocket (Socket.io) verso il backend NestJS.
  */
+type Translation = { text: string; sourceLang: string } | 'loading';
+
 export default function ChatRoom() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const nav = useNavigation<any>();
   const { params } = useRoute<any>();
   useLive();
@@ -30,8 +33,25 @@ export default function ChatRoom() {
 
   const [text, setText] = useState('');
   const [typing, setTyping] = useState(false);
+  const [translations, setTranslations] = useState<Record<string, Translation>>({});
   const scrollRef = useRef<ScrollView>(null);
   const lastCount = useRef(messages.length);
+
+  // Tap-to-translate: l'originale resta sempre visibile/ripristinabile, mai sovrascritto.
+  const toggleTranslate = async (messageId: string, original: string) => {
+    if (translations[messageId]) {
+      setTranslations((prev) => { const next = { ...prev }; delete next[messageId]; return next; });
+      return;
+    }
+    setTranslations((prev) => ({ ...prev, [messageId]: 'loading' }));
+    try {
+      const targetLang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+      const res = await translateText(original, targetLang);
+      setTranslations((prev) => ({ ...prev, [messageId]: { text: res.translatedText, sourceLang: res.sourceLang } }));
+    } catch {
+      setTranslations((prev) => { const next = { ...prev }; delete next[messageId]; return next; });
+    }
+  };
 
   useEffect(() => {
     markConversationRead(params.conversationId);
@@ -55,7 +75,16 @@ export default function ChatRoom() {
     const value = text.trim();
     if (!value) return;
     setText('');
-    await sendMessage(params.conversationId, value);
+    try {
+      await sendMessage(params.conversationId, value);
+    } catch (err) {
+      if (err instanceof ApiError && err.message === 'CONTACT_INFO_BLOCKED') {
+        setText(value); // non perdere quello che l'utente aveva scritto
+        Alert.alert(t('chat.blockedTitle'), t('chat.blockedBody'), [{ text: t('chat.blockedOk') }]);
+      } else {
+        setText(value);
+      }
+    }
   };
 
   if (!conv || !artisan) return <Screen><View /></Screen>;
@@ -74,8 +103,8 @@ export default function ChatRoom() {
           <Avatar name={artisan.name} color={artisan.color} size={40} />
           <View>
             <Text style={[g.h2, { fontSize: 16 }]}>{artisan.name}</Text>
-            <Text style={[g.small, { color: typing ? colors.primary : colors.success }]}>
-              {typing ? t('chat.typing') : t('chat.online')}
+            <Text style={[g.small, { color: (typing || conv.artisanTyping) ? colors.primary : colors.success }]}>
+              {(typing || conv.artisanTyping) ? t('chat.typing') : t('chat.online')}
             </Text>
           </View>
         </Pressable>
@@ -94,11 +123,25 @@ export default function ChatRoom() {
               );
             }
             const mine = m.from === 'me';
+            const tr = translations[m.id];
             return (
               <View key={m.id} style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
                 {m.image && <Image source={{ uri: m.image }} style={styles.img} />}
                 {!!m.text && (
-                  <Text style={[g.body, mine && { color: '#fff' }]}>{m.text}</Text>
+                  <Text style={[g.body, mine && { color: '#fff' }]}>
+                    {tr && tr !== 'loading' ? tr.text : m.text}
+                  </Text>
+                )}
+                {!!m.text && !mine && (
+                  <Pressable onPress={() => toggleTranslate(m.id, m.text)} hitSlop={6}>
+                    <Text style={[g.small, { color: colors.primary, marginTop: 4 }]}>
+                      {tr === 'loading'
+                        ? '…'
+                        : tr
+                        ? `${t('chat.translated', { lang: tr.sourceLang })} · ${t('chat.viewOriginal')}`
+                        : t('chat.viewTranslation')}
+                    </Text>
+                  </Pressable>
                 )}
               </View>
             );

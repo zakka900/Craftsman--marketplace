@@ -136,6 +136,7 @@ export interface Conversation {
   lastMessage: string;
   lastDate: string;
   unread: number;
+  artisanTyping?: boolean;
 }
 
 export type NotificationType = 'quote' | 'info_request' | 'chat' | 'job' | 'bank' | 'promo';

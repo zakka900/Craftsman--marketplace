@@ -1,55 +1,189 @@
 /**
- * LAYER API MOCK — simula l'intero backend in-memory.
- * Ogni funzione rispecchia un endpoint reale del backend NestJS (apps/backend).
- * PROVIDER REALE: sostituire le implementazioni con fetch verso l'API,
- * mantenendo le stesse firme (l'app non deve cambiare).
+ * LAYER API REALE — parla con il backend NestJS su Railway.
+ * Le firme sono le stesse del vecchio mock: le schermate non cambiano.
  *
- * Codice OTP demo: 123456
+ * Strategia: le funzioni sync (getRequests, getArtisan, ...) leggono una cache
+ * locale; le azioni async chiamano l'API e aggiornano la cache; subscribe/emit
+ * fa ri-renderizzare le schermate (hook useLive). Un polling ogni 15s tiene
+ * aggiornati richieste, chat e notifiche (sostituto semplice del realtime).
  */
 import {
   AppNotification, Artisan, Bank, BANKS, ChatMessage, Contract, Conversation,
-  COUNTRIES, HistoryEvent, InfoRequest, JobRequest, Quote, ReviewInput, User
+  COUNTRIES, InfoRequest, JobRequest, Quote, ReviewInput, User
 } from '@artisan/shared';
-import { AI_PHOTO_HINTS, AI_TEXT_HINTS, ARTISANS, QUOTE_NOTES } from './mockData';
+import { initPaymentSheet, presentPaymentSheet } from '@stripe/stripe-react-native';
+import { AI_PHOTO_HINTS } from './mockData';
+import { api, loadToken, saveToken } from './http';
+import {
+  CURRENCY, PROP_TO_BACKEND, toArtisan, toContract, toConversation, toInfoRequest,
+  toMessage, toNotification, toQuote, toRequest, toUser, URGENCY_TO_BACKEND
+} from './mappers';
 import { useAuthStore } from '../store';
 
-const delay = (ms = 500) => new Promise((r) => setTimeout(r, ms));
-const id = () => Math.random().toString(36).slice(2, 10);
-const now = () => new Date().toISOString();
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** In sviluppo il backend accetta il codice 123456; in produzione l'OTP arriva via email. */
 export const DEMO_OTP = '123456';
 
-// ---------------- DB in-memory ----------------
-interface DbUser extends User { password: string; phoneVerified: boolean; emailVerified: boolean; }
-
-const db = {
-  users: [] as DbUser[],
+// ---------------- CACHE LOCALE ----------------
+const cache = {
+  artisans: new Map<string, Artisan>(),
+  showcase: [] as { title: string; before: string; after: string; artisan: string; artisanId: string }[],
   requests: [] as JobRequest[],
-  quotes: [] as Quote[],
-  infoRequests: [] as InfoRequest[],
-  contracts: [] as Contract[],
+  quotesByRequest: new Map<string, Quote[]>(),
+  infoByRequest: new Map<string, InfoRequest[]>(),
+  contracts: new Map<string, Contract>(),
   conversations: [] as Conversation[],
-  messages: [] as ChatMessage[],
-  notifications: [] as AppNotification[],
-  listeners: new Set<() => void>()
+  messagesByConv: new Map<string, ChatMessage[]>(),
+  notifications: [] as AppNotification[]
 };
 
+const listeners = new Set<() => void>();
 function emit() {
-  db.listeners.forEach((l) => l());
-  const unread = db.notifications.filter((n) => !n.read).length;
+  listeners.forEach((l) => l());
+  const unread = cache.notifications.filter((n) => !n.read).length;
   useAuthStore.getState().setUnread(unread);
 }
 export function subscribe(fn: () => void) {
-  db.listeners.add(fn);
-  return () => { db.listeners.delete(fn); };
+  listeners.add(fn);
+  return () => { listeners.delete(fn); };
 }
 
-function notify(n: Omit<AppNotification, 'id' | 'date' | 'read'>) {
-  db.notifications.unshift({ ...n, id: id(), date: now(), read: false });
+const country = () => useAuthStore.getState().user?.country ?? 'SA';
+
+function cacheArtisan(a: any) {
+  if (a?.id) cache.artisans.set(a.id, toArtisan(a));
+}
+
+// ---------------- REFRESH & POLLING ----------------
+async function refreshArtisans() {
+  const [list, showcase] = await Promise.all([
+    api<any[]>('/artisans'),
+    api<any[]>('/artisans/showcase')
+  ]);
+  list.forEach(cacheArtisan);
+  cache.showcase = showcase.map((p) => ({
+    title: p.description ?? 'Project',
+    before: p.beforeUrl,
+    after: p.afterUrl,
+    artisan: p.artisan?.name ?? '',
+    artisanId: p.artisanId
+  }));
+}
+
+async function refreshRequests() {
+  const tabs = await Promise.all([
+    api<any[]>('/requests'),
+    api<any[]>('/requests?tab=completed'),
+    api<any[]>('/requests?tab=cancelled'),
+    api<any[]>('/requests?tab=disputed')
+  ]);
+  const c = country();
+  const prevById = new Map(cache.requests.map((r) => [r.id, r]));
+  const merged: JobRequest[] = [];
+  tabs.flat().forEach((raw) => {
+    const mapped = toRequest(raw, c);
+    const prev = prevById.get(mapped.id);
+    if (prev) {
+      // La lista non include timeline/aggiornamenti: conserva quelli del dettaglio.
+      if (!mapped.history.length) mapped.history = prev.history;
+      if (!mapped.jobUpdates.length) mapped.jobUpdates = prev.jobUpdates;
+      if (!mapped.zone) mapped.zone = prev.zone;
+    }
+    (raw.quotes ?? []).forEach((q: any) => cacheArtisan(q.artisan));
+    if (raw.quotes) cache.quotesByRequest.set(mapped.id, raw.quotes.map(toQuote));
+    merged.push(mapped);
+  });
+  merged.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  cache.requests = merged;
+}
+
+function chatUnread(conversationId: string) {
+  return cache.notifications.filter(
+    (n) => n.type === 'chat' && !n.read && n.conversationId === conversationId
+  ).length;
+}
+
+async function refreshConversations() {
+  const list = await api<any[]>('/conversations');
+  list.forEach((c) => cacheArtisan(c.artisan));
+  cache.conversations = list.map((c) => toConversation(c, chatUnread(c.id)));
+}
+
+async function refreshNotifications() {
+  const list = await api<any[]>('/notifications');
+  cache.notifications = list.map(toNotification);
+}
+
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+let demoTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function refreshAll() {
+  await Promise.all([refreshRequests(), refreshNotifications()]);
+  await refreshConversations(); // dopo le notifiche (per i badge non letti)
   emit();
 }
 
-function addHistory(req: JobRequest, type: HistoryEvent['type'], text: string) {
-  req.history.push({ id: id(), type, text, date: now() });
+/** Popola chat demo con gli artigiani (no-op se il cliente ha già conversazioni). */
+async function seedDemoChats() {
+  try {
+    const res = await api<{ seeded: boolean }>('/conversations/seed-demo', { method: 'POST' });
+    if (res.seeded) await refreshAll();
+  } catch {}
+}
+
+async function bootstrap() {
+  try {
+    await refreshArtisans();
+    await refreshAll();
+  } catch {
+    // offline / primo avvio: le schermate mostrano stati vuoti
+  }
+  if (!pollTimer) pollTimer = setInterval(() => { refreshAll().catch(() => {}); }, 15000);
+  if (!demoTimer) demoTimer = setTimeout(() => { seedDemoChats(); }, 10000);
+}
+
+function teardown() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
+  cache.requests = [];
+  cache.quotesByRequest.clear();
+  cache.infoByRequest.clear();
+  cache.contracts.clear();
+  cache.conversations = [];
+  cache.messagesByConv.clear();
+  cache.notifications = [];
+  emit();
+}
+
+// Logout dal profilo → pulisci token e cache.
+useAuthStore.subscribe((state, prev) => {
+  if (prev.user && !state.user) {
+    saveToken(null).catch(() => {});
+    teardown();
+  }
+});
+
+/** Ripristina la sessione all'avvio (token JWT salvato su AsyncStorage). */
+export async function restoreSession(): Promise<boolean> {
+  const token = await loadToken();
+  if (!token) return false;
+  try {
+    const me = await api<any>('/users/me');
+    useAuthStore.getState().setUser(toUser(me));
+    bootstrap();
+    return true;
+  } catch {
+    await saveToken(null);
+    return false;
+  }
+}
+
+/** Aggiorna nome/cognome/telefono — PATCH /users/me, già presente lato backend. */
+export async function updateProfile(input: { firstName?: string; lastName?: string; phone?: string }): Promise<User> {
+  const raw = await api<any>('/users/me', { method: 'PATCH', body: input });
+  const user = toUser(raw);
+  useAuthStore.getState().setUser(user);
+  return user;
 }
 
 // ---------------- AUTH ----------------
@@ -58,138 +192,125 @@ export interface RegisterInput {
   email: string; password: string;
 }
 
+// Email in attesa di verifica OTP (register/login/reset la impostano).
+let pendingEmail = '';
+
 export async function register(input: RegisterInput): Promise<{ userId: string }> {
-  await delay(700);
-  if (db.users.some((u) => u.email === input.email.toLowerCase())) {
-    throw new Error('EMAIL_EXISTS');
-  }
-  const country = COUNTRIES.find((c) => c.dial === input.dial)?.code || 'SA';
-  const user: DbUser = {
-    id: id(),
-    firstName: input.firstName.trim(),
-    lastName: input.lastName.trim(),
-    email: input.email.toLowerCase().trim(),
-    phone: `${input.dial} ${input.phone}`,
-    country,
-    password: input.password,
-    bankVerified: false,
-    phoneVerified: false,
-    emailVerified: false
-  };
-  db.users.push(user);
-  console.log(`[MOCK OTP] SMS to ${user.phone}: ${DEMO_OTP}`);
-  return { userId: user.id };
+  const countryCode = COUNTRIES.find((c) => c.dial === input.dial)?.code || 'SA';
+  const res = await api<{ userId: string; email: string }>('/auth/register', {
+    body: {
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      email: input.email.toLowerCase().trim(),
+      password: input.password,
+      country: countryCode,
+      phone: input.phone ? `${input.dial} ${input.phone}` : undefined
+    }
+  });
+  pendingEmail = res.email;
+  return { userId: res.userId };
 }
 
-export async function sendOtp(userId: string, channel: 'phone' | 'email', via: 'sms' | 'whatsapp' = 'sms') {
-  await delay(400);
-  console.log(`[MOCK OTP] ${channel} (${via}) for ${userId}: ${DEMO_OTP}`);
+export async function sendOtp(_userId: string, _channel: 'phone' | 'email', _via: 'sms' | 'whatsapp' = 'sms') {
+  await api('/auth/otp/resend', { body: { email: pendingEmail } });
 }
 
-export async function verifyOtp(userId: string, channel: 'phone' | 'email', code: string): Promise<User> {
-  await delay(600);
-  const u = db.users.find((x) => x.id === userId);
-  if (!u || code !== DEMO_OTP) throw new Error('WRONG_CODE');
-  if (channel === 'phone') u.phoneVerified = true; else u.emailVerified = true;
-  return u;
+export async function verifyOtp(_userId: string, _channel: 'phone' | 'email', code: string): Promise<User> {
+  const res = await api<{ token: string; user: any }>('/auth/otp/verify', {
+    body: { email: pendingEmail, code }
+  });
+  await saveToken(res.token);
+  bootstrap();
+  return toUser(res.user);
 }
 
 export async function login(identifier: string, password: string): Promise<User> {
-  await delay(700);
-  const idl = identifier.toLowerCase().trim();
-  const u = db.users.find((x) => x.email === idl || x.phone.replace(/\s/g, '').endsWith(idl.replace(/\s/g, '')));
-  if (!u) throw new Error('NOT_FOUND');
-  if (u.password !== password) throw new Error('WRONG_PASSWORD');
-  if (!u.phoneVerified || !u.emailVerified) {
-    const err: any = new Error('NOT_VERIFIED');
-    err.userId = u.id;
-    err.channel = !u.phoneVerified ? 'phone' : 'email';
-    throw err;
+  const email = identifier.toLowerCase().trim();
+  try {
+    const res = await api<{ token: string; user: any }>('/auth/login', { body: { email, password } });
+    await saveToken(res.token);
+    bootstrap();
+    return toUser(res.user);
+  } catch (e: any) {
+    if (e?.message === 'NOT_VERIFIED') {
+      pendingEmail = email; // il backend ha già re-inviato l'OTP
+      e.userId = email;
+      e.channel = 'email';
+    }
+    throw e;
   }
-  return u;
 }
 
-/** Social login mock (Google/Apple). PROVIDER REALE: Expo AuthSession. */
-export async function socialLogin(provider: 'google' | 'apple'): Promise<User> {
-  await delay(900);
-  let u = db.users.find((x) => x.email === `demo.${provider}@example.com`);
-  if (!u) {
-    u = {
-      id: id(), firstName: provider === 'google' ? 'Demo' : 'Apple', lastName: 'User',
-      email: `demo.${provider}@example.com`, phone: '+966 500000000', country: 'SA',
-      password: '', bankVerified: false, phoneVerified: true, emailVerified: true
-    };
-    db.users.push(u);
-  }
-  return u;
+/** Social login non ancora attivo sul backend (fase 2: Expo AuthSession). */
+export async function socialLogin(_provider: 'google' | 'apple'): Promise<User> {
+  await delay(300);
+  throw new Error('NOT_AVAILABLE');
 }
 
 export async function requestPasswordReset(identifier: string) {
-  await delay(500);
-  console.log(`[MOCK OTP] password reset for ${identifier}: ${DEMO_OTP}`);
+  pendingEmail = identifier.toLowerCase().trim();
+  await api('/auth/password/forgot', { body: { email: pendingEmail } });
 }
 
 export async function resetPassword(identifier: string, code: string, newPassword: string) {
-  await delay(600);
-  if (code !== DEMO_OTP) throw new Error('WRONG_CODE');
-  const idl = identifier.toLowerCase().trim();
-  const u = db.users.find((x) => x.email === idl || x.phone.replace(/\s/g, '').endsWith(idl.replace(/\s/g, '')));
-  if (u) u.password = newPassword;
+  await api('/auth/password/reset', {
+    body: { email: identifier.toLowerCase().trim(), code, newPassword }
+  });
 }
 
-// ---------------- VERIFICA BANCARIA (Open Banking mock) ----------------
-// PROVIDER REALE: modulo bank-verification del backend (Lean Technologies / Tarabut).
-export function getBanks(country: string): Bank[] {
-  return BANKS.filter((b) => b.country === country);
+// ---------------- VERIFICA BANCARIA ----------------
+export function getBanks(countryCode: string): Bank[] {
+  return BANKS.filter((b) => b.country === countryCode);
 }
 
 export async function startBankVerification(bankId: string): Promise<{ verificationId: string }> {
-  await delay(800); // simula redirect/deep-link all'app della banca
-  return { verificationId: id() };
+  return api('/bank/verify', { body: { bankId } });
 }
 
-export async function pollBankVerification(_verificationId: string): Promise<'pending' | 'verified' | 'failed'> {
+export async function pollBankVerification(verificationId: string): Promise<'pending' | 'verified' | 'failed'> {
   await delay(1200);
-  // Simula: l'utente approva nell'app bancaria dopo ~4s (90% successo)
-  (pollBankVerification as any).calls = ((pollBankVerification as any).calls || 0) + 1;
-  if ((pollBankVerification as any).calls % 4 !== 0) return 'pending';
-  const ok = Math.random() > 0.1;
-  if (ok) {
-    const u = useAuthStore.getState().user;
-    const dbu = db.users.find((x) => x.id === u?.id);
-    if (dbu) dbu.bankVerified = true;
-    notify({ type: 'bank', title: 'Bank account verified', body: 'Your payments are now fully enabled.' });
+  const res = await api<{ status: 'pending' | 'verified' | 'failed' }>(`/bank/verify/${verificationId}`);
+  if (res.status === 'verified') {
+    try {
+      const me = await api<any>('/users/me');
+      useAuthStore.getState().setUser(toUser(me));
+    } catch {}
+    refreshNotifications().then(emit).catch(() => {});
   }
-  return ok ? 'verified' : 'failed';
+  return res.status;
 }
 
 // ---------------- RICERCA & ARTIGIANI ----------------
 export async function searchArtisans(q: string): Promise<Artisan[]> {
-  await delay(250);
-  const ql = q.toLowerCase();
-  return ARTISANS.filter(
-    (a) => a.name.toLowerCase().includes(ql) || a.categoryId.includes(ql) ||
-      a.city.toLowerCase().includes(ql) || a.zone.toLowerCase().includes(ql)
-  );
+  const list = await api<any[]>(`/artisans?q=${encodeURIComponent(q)}`);
+  list.forEach(cacheArtisan);
+  return list.map((a) => cache.artisans.get(a.id)!);
 }
 
 export function getArtisan(artisanId: string): Artisan | undefined {
-  return ARTISANS.find((a) => a.id === artisanId);
+  const found = cache.artisans.get(artisanId);
+  if (!found) {
+    // Non in cache: caricalo in background e ri-renderizza.
+    api<any>(`/artisans/${artisanId}`).then((a) => { cacheArtisan(a); emit(); }).catch(() => {});
+  }
+  return found;
 }
 
 export function getShowcase() {
-  return ARTISANS.flatMap((a) => a.portfolio.map((p) => ({ ...p, artisan: a.name, artisanId: a.id })));
+  return cache.showcase;
 }
 
-// ---------------- AI (mock) ----------------
+// ---------------- AI ----------------
+// Testo: analisi reale via backend (Gemini, con fallback mock lato server se manca la chiave).
 export async function aiAnalyzeText(categoryId: string, text: string): Promise<string[]> {
-  await delay(600);
-  const hints = AI_TEXT_HINTS[categoryId] || AI_TEXT_HINTS.default;
-  // Non riproporre suggerimenti già "coperti" dal testo (euristica semplice)
-  return hints.filter((h) => {
-    const kw = h.split(' ').filter((w) => w.length > 5).slice(0, 2);
-    return !kw.some((w) => text.toLowerCase().includes(w.toLowerCase()));
-  }).slice(0, 3);
+  try {
+    const res = await api<{ missingInfo: string[]; questions: string[] }>('/ai/analyze-text', {
+      body: { categoryId, description: text }
+    });
+    return res.missingInfo ?? [];
+  } catch {
+    return []; // suggerimenti non bloccanti: un errore AI non deve fermare il wizard
+  }
 }
 
 export async function aiAnalyzePhotos(categoryId: string, photos: string[]): Promise<string[]> {
@@ -198,301 +319,259 @@ export async function aiAnalyzePhotos(categoryId: string, photos: string[]): Pro
   const pool = AI_PHOTO_HINTS[categoryId] || AI_PHOTO_HINTS.default;
   if (photos.length < 2) hints.push(pool[0]);
   else hints.push(pool[1] || pool[0]);
-  if (photos.length && photos.length % 3 === 0) hints.push('__BLURRY__'); // segnala foto sfocata (mock)
+  if (photos.length && photos.length % 3 === 0) hints.push('__BLURRY__');
   return hints;
 }
 
 // ---------------- RICHIESTE ----------------
 export async function createRequest(draft: any, user: User): Promise<JobRequest> {
-  await delay(900);
-  const currency = COUNTRIES.find((c) => c.code === user.country)?.currency || 'SAR';
-  const req: JobRequest = {
-    id: id(),
-    categoryId: draft.categoryId,
-    subcategory: draft.subcategory,
-    description: draft.description,
-    photos: draft.photos,
-    city: draft.city,
-    zone: draft.zone,
-    propertyType: draft.propertyType,
-    urgency: draft.urgency,
-    budgetMin: draft.budgetOn ? draft.budgetMin : undefined,
-    budgetMax: draft.budgetOn ? draft.budgetMax : undefined,
-    currency,
-    status: 'awaiting_quotes',
-    createdAt: now(),
-    jobUpdates: [],
-    history: [],
-    directToArtisanId: draft.directToArtisanId
-  };
-  addHistory(req, 'created', 'Request created');
-  db.requests.unshift(req);
-  scheduleMockArtisanActivity(req);
+  const raw = await api<any>('/requests', {
+    body: {
+      categoryId: draft.categoryId,
+      subcategory: draft.subcategory,
+      description: draft.zone ? `${draft.description}\n\nZone: ${draft.zone}` : draft.description,
+      photos: draft.photos ?? [],
+      city: draft.city,
+      propertyType: PROP_TO_BACKEND[draft.propertyType] ?? 'APARTMENT',
+      urgency: URGENCY_TO_BACKEND[draft.urgency] ?? 'FLEXIBLE',
+      budgetMin: draft.budgetOn ? draft.budgetMin : undefined,
+      budgetMax: draft.budgetOn ? draft.budgetMax : undefined,
+      directArtisanId: draft.directToArtisanId
+    }
+  });
+  const req = toRequest(raw, user.country);
+  req.zone = draft.zone ?? '';
+  cache.requests.unshift(req);
   emit();
   return req;
 }
 
 export function getRequests(): JobRequest[] {
-  return db.requests;
-}
-export function getRequest(requestId: string): JobRequest | undefined {
-  return db.requests.find((r) => r.id === requestId);
-}
-export function getQuotes(requestId: string): Quote[] {
-  return db.quotes.filter((q) => q.requestId === requestId);
-}
-export function getInfoRequests(requestId: string): InfoRequest[] {
-  return db.infoRequests.filter((i) => i.requestId === requestId);
-}
-export function getInfoRequest(infoId: string): InfoRequest | undefined {
-  return db.infoRequests.find((i) => i.id === infoId);
+  return cache.requests;
 }
 
-/** Simula l'attività lato artigiano: preventivi + eventuale "richiedi più info". */
-function scheduleMockArtisanActivity(req: JobRequest) {
-  const pool = req.directToArtisanId
-    ? ARTISANS.filter((a) => a.id === req.directToArtisanId)
-    : ARTISANS.filter((a) => a.categoryId === req.categoryId).concat(
-        ARTISANS.filter((a) => a.categoryId !== req.categoryId).slice(0, 1)
-      );
-  const artisans = pool.slice(0, 3);
+// Dettaglio richiesta: fetch in background (max 1 ogni 5s per richiesta).
+const lastDetailFetch = new Map<string, number>();
 
-  // "Richiedi più informazioni" dal primo artigiano dopo ~8s
-  if (!req.directToArtisanId && artisans[0]) {
-    setTimeout(() => {
-      if (req.status !== 'awaiting_quotes' && req.status !== 'quotes_received') return;
-      const a = artisans[0];
-      const info: InfoRequest = {
-        id: id(), requestId: req.id, artisanId: a.id,
-        message: 'Could you tell me if the area is easily accessible and on which floor? It affects the price.',
-        photoHints: ['A photo of the access/entrance', 'A wider shot of the area'],
-        createdAt: now()
-      };
-      db.infoRequests.push(info);
-      addHistory(req, 'info_request', `${a.name} requested more information`);
-      notify({ type: 'info_request', title: 'More info needed', body: `${a.name} needs more information for your job`, requestId: req.id });
-    }, 8000);
+async function fetchRequestDetail(requestId: string) {
+  const raw = await api<any>(`/requests/${requestId}`);
+  if (!raw) return;
+  const mapped = toRequest(raw, country());
+  const idx = cache.requests.findIndex((r) => r.id === requestId);
+  if (idx >= 0) {
+    if (!mapped.zone) mapped.zone = cache.requests[idx].zone;
+    cache.requests[idx] = mapped;
+  } else {
+    cache.requests.unshift(mapped);
   }
-
-  // Preventivi a 10s / 18s / 26s
-  artisans.forEach((a, i) => {
-    setTimeout(() => {
-      if (['artisan_selected', 'in_progress', 'completed', 'cancelled', 'disputed'].includes(req.status)) return;
-      const base = 300 + Math.round(Math.random() * 900);
-      const labor = Math.round(base * 0.6);
-      const quote: Quote = {
-        id: id(), requestId: req.id, artisanId: a.id,
-        total: base, labor, materials: base - labor,
-        days: 1 + Math.round(Math.random() * 5),
-        note: QUOTE_NOTES[i % QUOTE_NOTES.length],
-        createdAt: now()
-      };
-      db.quotes.push(quote);
-      markRecommended(req.id);
-      req.status = 'quotes_received';
-      addHistory(req, 'quote', `Quote received from ${a.name}`);
-      notify({ type: 'quote', title: 'New quote received', body: `${a.name} sent you a quote`, requestId: req.id });
-    }, 10000 + i * 8000);
-  });
+  (raw.quotes ?? []).forEach((q: any) => cacheArtisan(q.artisan));
+  (raw.infoRequests ?? []).forEach((i: any) => cacheArtisan(i.artisan));
+  cache.quotesByRequest.set(requestId, (raw.quotes ?? []).map(toQuote));
+  cache.infoByRequest.set(requestId, (raw.infoRequests ?? []).map(toInfoRequest));
+  if (raw.contract) {
+    cacheArtisan(raw.contract.artisan);
+    cache.contracts.set(raw.contract.id, toContract(raw.contract));
+  }
+  emit();
 }
 
-/** "Consigliato" = miglior rapporto qualità/prezzo (rating alto, prezzo ragionevole). */
-function markRecommended(requestId: string) {
-  const qs = db.quotes.filter((q) => q.requestId === requestId);
-  if (!qs.length) return;
-  const maxPrice = Math.max(...qs.map((q) => q.total));
-  let best: Quote | null = null;
-  let bestScore = -1;
-  qs.forEach((q) => {
-    q.recommended = false;
-    const a = getArtisan(q.artisanId);
-    const score = (a?.rating || 3) * 2 - (q.total / maxPrice) * 3;
-    if (score > bestScore) { bestScore = score; best = q; }
-  });
-  if (best) (best as Quote).recommended = true;
+function scheduleDetail(requestId: string, minMs = 5000) {
+  const last = lastDetailFetch.get(requestId) ?? 0;
+  if (Date.now() - last < minMs) return;
+  lastDetailFetch.set(requestId, Date.now());
+  fetchRequestDetail(requestId).catch(() => {});
+}
+
+export function getRequest(requestId: string): JobRequest | undefined {
+  scheduleDetail(requestId);
+  return cache.requests.find((r) => r.id === requestId);
+}
+
+export function getQuotes(requestId: string): Quote[] {
+  return cache.quotesByRequest.get(requestId) ?? [];
+}
+
+export function getInfoRequests(requestId: string): InfoRequest[] {
+  scheduleDetail(requestId);
+  return cache.infoByRequest.get(requestId) ?? [];
+}
+
+export function getInfoRequest(infoId: string): InfoRequest | undefined {
+  for (const list of cache.infoByRequest.values()) {
+    const found = list.find((i) => i.id === infoId);
+    if (found) return found;
+  }
+  return undefined;
 }
 
 export async function replyInfoRequest(infoId: string, text: string, photos: string[]) {
-  await delay(600);
-  const info = db.infoRequests.find((i) => i.id === infoId);
-  if (!info) throw new Error('NOT_FOUND');
-  info.reply = { text, photos, date: now() };
-  const req = getRequest(info.requestId);
-  if (req) addHistory(req, 'info_reply', 'You replied with more information');
-  emit();
+  const info = getInfoRequest(infoId);
+  await api(`/info-requests/${infoId}/reply`, { body: { text, photos } });
+  if (info) {
+    lastDetailFetch.delete(info.requestId);
+    await fetchRequestDetail(info.requestId);
+  }
 }
 
 // ---------------- CONTRATTO & PAGAMENTO ----------------
 export async function createContract(requestId: string, quoteId: string): Promise<Contract> {
-  await delay(700);
-  const req = getRequest(requestId)!;
-  const quote = db.quotes.find((q) => q.id === quoteId)!;
-  const existing = db.contracts.find((c) => c.quoteId === quoteId);
-  if (existing) return existing;
-  const contract: Contract = {
-    id: id(), requestId, quoteId, artisanId: quote.artisanId,
-    price: quote.total, currency: req.currency,
-    scope: `${req.subcategory} — ${req.description.slice(0, 120)}`,
-    days: quote.days, terms: ['term1', 'term2', 'term3']
-  };
-  db.contracts.push(contract);
+  const raw = await api<any>('/contracts', { body: { quoteId } });
+  const contract = toContract(raw);
+  cache.contracts.set(contract.id, contract);
   return contract;
 }
 
 export function getContract(contractId: string): Contract | undefined {
-  return db.contracts.find((x) => x.id === contractId);
+  return cache.contracts.get(contractId);
 }
 
 export async function signContract(contractId: string) {
-  await delay(600);
-  const c = db.contracts.find((x) => x.id === contractId)!;
-  c.signedAt = now();
-  const req = getRequest(c.requestId)!;
-  req.status = 'artisan_selected';
-  req.artisanId = c.artisanId;
-  req.quoteId = c.quoteId;
-  addHistory(req, 'contract', 'Contract signed');
-  emit();
-  return c;
+  const raw = await api<any>(`/contracts/${contractId}/sign`, { method: 'POST' });
+  const contract = toContract(raw);
+  cache.contracts.set(contract.id, contract);
+  lastDetailFetch.delete(contract.requestId);
+  await fetchRequestDetail(contract.requestId);
+  return contract;
 }
 
-// PROVIDER REALE: Tap Payments / PayTabs / Moyasar (carta, Apple Pay, mada).
+/**
+ * Deposito in escrow con Stripe PaymentSheet:
+ * 1) il backend crea il PaymentIntent → clientSecret
+ * 2) l'utente paga nel foglio Stripe nativo
+ * 3) il webhook Stripe segna il pagamento HELD_ESCROW e avvia il lavoro
+ */
 export async function payDeposit(contractId: string): Promise<{ receiptId: string }> {
-  await delay(1500);
-  const c = db.contracts.find((x) => x.id === contractId)!;
-  const req = getRequest(c.requestId)!;
-  req.status = 'in_progress';
-  req.stage = 'confirmed';
-  addHistory(req, 'payment', `Deposit of ${c.price} ${c.currency} held in escrow`);
-  openConversation(c.artisanId, req.id, true);
-  scheduleMockJobProgress(req);
-  emit();
-  return { receiptId: id().toUpperCase() };
-}
-
-/** Simula l'avanzamento del lavoro da parte dell'artigiano. */
-function scheduleMockJobProgress(req: JobRequest) {
-  const a = getArtisan(req.artisanId!);
-  const steps: { stage: JobRequest['stage']; text: string; photo?: boolean; ms: number }[] = [
-    { stage: 'started', text: 'Arrived on site and started the job', ms: 12000 },
-    { stage: 'working', text: 'Work in progress — first phase done', photo: true, ms: 24000 },
-    { stage: 'completed', text: 'Job completed! Final photos attached', photo: true, ms: 40000 }
-  ];
-  steps.forEach((s) => {
-    setTimeout(() => {
-      if (req.status !== 'in_progress') return;
-      req.stage = s.stage;
-      req.jobUpdates.push({
-        id: id(), text: s.text, date: now(),
-        photos: s.photo ? [`https://picsum.photos/seed/${id()}/500/340`] : []
-      });
-      addHistory(req, 'stage', s.text);
-      notify({
-        type: 'job',
-        title: s.stage === 'completed' ? 'Job completed' : 'Job update',
-        body: `${a?.name}: ${s.text}`,
-        requestId: req.id
-      });
-    }, s.ms);
+  const dep = await api<{ paymentId: string; clientSecret: string }>('/payments/deposit', {
+    body: { contractId }
   });
+
+  const init = await initPaymentSheet({
+    paymentIntentClientSecret: dep.clientSecret,
+    merchantDisplayName: 'Artisan'
+  });
+  if (init.error) throw new Error(init.error.message || 'PAYMENT_INIT_FAILED');
+
+  const result = await presentPaymentSheet();
+  if (result.error) {
+    if (result.error.code === 'Canceled') throw new Error('CANCELLED');
+    throw new Error(result.error.message || 'PAYMENT_FAILED');
+  }
+
+  // Attendi che il webhook confermi (stato richiesta → in_progress)
+  const contract = cache.contracts.get(contractId);
+  if (contract) {
+    for (let i = 0; i < 7; i++) {
+      await delay(2000);
+      lastDetailFetch.delete(contract.requestId);
+      try { await fetchRequestDetail(contract.requestId); } catch {}
+      const req = cache.requests.find((r) => r.id === contract.requestId);
+      if (req && req.status === 'in_progress') break;
+    }
+  }
+  refreshConversations().then(emit).catch(() => {});
+  return { receiptId: dep.paymentId.slice(-8).toUpperCase() };
 }
 
 export async function confirmCompletion(requestId: string) {
-  await delay(800);
-  const req = getRequest(requestId)!;
-  req.stage = 'client_confirmed';
-  req.status = 'completed';
-  addHistory(req, 'stage', 'You confirmed the job — payment released to the artisan');
-  emit();
+  await api(`/requests/${requestId}/confirm`, { method: 'POST' });
+  lastDetailFetch.delete(requestId);
+  await fetchRequestDetail(requestId);
 }
 
 export async function openDispute(requestId: string, reason: string, description: string, photos: string[]) {
-  await delay(900);
-  const req = getRequest(requestId)!;
-  req.status = 'disputed';
-  addHistory(req, 'dispute', `Dispute opened: ${reason} — ${description.slice(0, 80)}`);
-  emit();
+  await api(`/requests/${requestId}/dispute`, { body: { reason, description, photos } });
+  lastDetailFetch.delete(requestId);
+  await fetchRequestDetail(requestId);
 }
 
 export async function submitReview(requestId: string, review: ReviewInput) {
-  await delay(800);
-  const req = getRequest(requestId)!;
-  req.reviewed = true;
-  addHistory(req, 'review', `You left a ${review.rating}★ review`);
-  emit();
+  await api(`/requests/${requestId}/review`, { body: review });
+  lastDetailFetch.delete(requestId);
+  await fetchRequestDetail(requestId);
 }
 
 // ---------------- CHAT ----------------
 export function getConversations(): Conversation[] {
-  return db.conversations;
+  return cache.conversations;
 }
 
-export function openConversation(artisanId: string, requestId?: string, system = false): Conversation {
-  let conv = db.conversations.find((c) => c.artisanId === artisanId && c.requestId === requestId);
-  if (!conv) {
-    conv = { id: id(), artisanId, requestId, lastMessage: '', lastDate: now(), unread: 0 };
-    db.conversations.unshift(conv);
-    if (system) {
-      pushMessage(conv.id, 'system', 'Quote accepted — payment held in escrow');
-    }
-    emit();
-  }
+/** Apre (o riusa) una conversazione con un artigiano. Ora async: va atteso con await. */
+export async function openConversation(artisanId: string, requestId?: string): Promise<Conversation> {
+  const raw = await api<any>('/conversations', { body: { artisanId, requestId } });
+  cacheArtisan(raw.artisan);
+  const conv = toConversation(raw, chatUnread(raw.id));
+  const idx = cache.conversations.findIndex((c) => c.id === conv.id);
+  if (idx >= 0) cache.conversations[idx] = conv;
+  else cache.conversations.unshift(conv);
+  emit();
   return conv;
 }
 
-export function getMessages(conversationId: string): ChatMessage[] {
-  return db.messages.filter((m) => m.conversationId === conversationId);
+const lastMessagesFetch = new Map<string, number>();
+
+async function fetchMessages(conversationId: string) {
+  const raw = await api<any[]>(`/conversations/${conversationId}/messages`);
+  cache.messagesByConv.set(conversationId, raw.map(toMessage));
+  emit();
 }
 
-function pushMessage(conversationId: string, from: ChatMessage['from'], text: string, image?: string) {
-  const msg: ChatMessage = { id: id(), conversationId, from, text, image, date: now(), status: 'sent' };
-  db.messages.push(msg);
-  const conv = db.conversations.find((c) => c.id === conversationId);
+export function getMessages(conversationId: string): ChatMessage[] {
+  const last = lastMessagesFetch.get(conversationId) ?? 0;
+  if (Date.now() - last > 4000) {
+    lastMessagesFetch.set(conversationId, Date.now());
+    fetchMessages(conversationId).catch(() => {});
+  }
+  return cache.messagesByConv.get(conversationId) ?? [];
+}
+
+export async function sendMessage(conversationId: string, text: string, image?: string) {
+  const raw = await api<any>(`/conversations/${conversationId}/messages`, {
+    body: { text, imageUrl: image }
+  });
+  const msg = toMessage(raw);
+  const list = cache.messagesByConv.get(conversationId) ?? [];
+  list.push(msg);
+  cache.messagesByConv.set(conversationId, list);
+  const conv = cache.conversations.find((c) => c.id === conversationId);
   if (conv) {
     conv.lastMessage = text || '📷 Photo';
     conv.lastDate = msg.date;
-    if (from === 'them') conv.unread += 1;
   }
   emit();
   return msg;
 }
 
-export async function sendMessage(conversationId: string, text: string, image?: string) {
-  const msg = pushMessage(conversationId, 'me', text, image);
-  // Risposta automatica mock dell'artigiano
-  setTimeout(() => {
-    msg.status = 'seen';
-    emit();
-  }, 1200);
-  setTimeout(() => {
-    const replies = [
-      'Thanks, noted! 👍', 'Ok, I will check and get back to you.',
-      'Can do. Does tomorrow morning work for you?', 'Got it, thanks for the details.'
-    ];
-    const conv = db.conversations.find((c) => c.id === conversationId);
-    const a = conv ? getArtisan(conv.artisanId) : null;
-    pushMessage(conversationId, 'them', replies[Math.floor(Math.random() * replies.length)]);
-    notify({ type: 'chat', title: a?.name || 'New message', body: 'New message', conversationId });
-  }, 2500 + Math.random() * 2000);
-  return msg;
+// Traduzione contenuti (chat, descrizione richiesta) — cache lato backend, testo originale intatto.
+export async function translateText(text: string, targetLang: 'en' | 'ar'): Promise<{ translatedText: string; sourceLang: string }> {
+  return api<{ translatedText: string; sourceLang: string }>('/translate', { body: { text, targetLang } });
 }
 
 export function markConversationRead(conversationId: string) {
-  const conv = db.conversations.find((c) => c.id === conversationId);
+  const conv = cache.conversations.find((c) => c.id === conversationId);
   if (conv) conv.unread = 0;
+  cache.notifications
+    .filter((n) => n.type === 'chat' && !n.read && n.conversationId === conversationId)
+    .forEach((n) => {
+      n.read = true;
+      api(`/notifications/${n.id}/read`, { method: 'POST' }).catch(() => {});
+    });
   emit();
 }
 
 // ---------------- NOTIFICHE ----------------
 export function getNotifications(): AppNotification[] {
-  return db.notifications;
+  return cache.notifications;
 }
+
 export function markAllNotificationsRead() {
-  db.notifications.forEach((n) => (n.read = true));
+  cache.notifications.forEach((n) => (n.read = true));
+  api('/notifications/read-all', { method: 'POST' }).catch(() => {});
   emit();
 }
+
 export function markNotificationRead(nId: string) {
-  const n = db.notifications.find((x) => x.id === nId);
+  const n = cache.notifications.find((x) => x.id === nId);
   if (n) n.read = true;
+  api(`/notifications/${nId}/read`, { method: 'POST' }).catch(() => {});
   emit();
 }
