@@ -8,7 +8,7 @@ import Button from '../../components/ui/Button';
 import QuoteCard from '../../components/domain/QuoteCard';
 import EmptyState from '../../components/feedback/EmptyState';
 import Skeleton from '../../components/feedback/Skeleton';
-import { getArtisan, getInfoRequests, getQuotes, getRequest, openConversation } from '../../services/api';
+import { getArtisan, getInfoRequests, getQuotes, getRequest, openConversation, translateText } from '../../services/api';
 import { useLive } from '../../hooks/useLive';
 import { colors, g, radius, shadow } from '../../theme';
 import { shortDate, timeAgo } from '../../utils/format';
@@ -17,15 +17,28 @@ type Sort = 'rating' | 'price' | 'time';
 
 /** Dettaglio richiesta: preventivi ricevuti + richieste info + cronologia. */
 export default function RequestDetail() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const nav = useNavigation<any>();
   const { params } = useRoute<any>();
   useLive();
   const [sort, setSort] = useState<Sort>('rating');
+  const [descTranslation, setDescTranslation] = useState<{ text: string; sourceLang: string } | 'loading' | null>(null);
 
   const request = getRequest(params.requestId);
   if (!request) return null;
   const infoRequests = getInfoRequests(request.id);
+
+  const toggleDescTranslate = async () => {
+    if (descTranslation) { setDescTranslation(null); return; }
+    setDescTranslation('loading');
+    try {
+      const targetLang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+      const res = await translateText(request.description, targetLang);
+      setDescTranslation({ text: res.translatedText, sourceLang: res.sourceLang });
+    } catch {
+      setDescTranslation(null);
+    }
+  };
 
   const quotes = [...getQuotes(request.id)].sort((a, b) => {
     if (sort === 'price') return a.total - b.total;
@@ -53,7 +66,18 @@ export default function RequestDetail() {
           <Text style={[g.small, { marginTop: 4 }]}>
             {request.city}{request.zone ? ` · ${request.zone}` : ''} · {shortDate(request.createdAt)}
           </Text>
-          <Text style={[g.body, { marginTop: 8 }]} numberOfLines={3}>{request.description}</Text>
+          <Text style={[g.body, { marginTop: 8 }]} numberOfLines={3}>
+            {descTranslation && descTranslation !== 'loading' ? descTranslation.text : request.description}
+          </Text>
+          <Pressable onPress={toggleDescTranslate} hitSlop={6}>
+            <Text style={[g.small, { color: colors.primary, marginTop: 4 }]}>
+              {descTranslation === 'loading'
+                ? '…'
+                : descTranslation
+                ? `${t('chat.translated', { lang: descTranslation.sourceLang })} · ${t('chat.viewOriginal')}`
+                : t('chat.viewTranslation')}
+            </Text>
+          </Pressable>
         </View>
 
         {/* Se il lavoro è già in corso → vai al tracking */}
@@ -112,8 +136,8 @@ export default function RequestDetail() {
             {quotes.map((q) => (
               <QuoteCard key={q.id} quote={q} currency={request.currency}
                 onProfile={() => nav.navigate('ArtisanProfile', { artisanId: q.artisanId })}
-                onChat={() => {
-                  const conv = openConversation(q.artisanId, request.id);
+                onChat={async () => {
+                  const conv = await openConversation(q.artisanId, request.id);
                   nav.navigate('ChatRoom', { conversationId: conv.id });
                 }}
                 onChoose={() => nav.navigate('Contract', { requestId: request.id, quoteId: q.id })}
