@@ -40,12 +40,12 @@ export default function Register() {
     setLoading(true);
     try {
       const { userId } = await register(form);
-      nav.navigate('Otp', {
-        userId, channel: 'phone', target: `${form.dial} ${form.phone}`,
-        nextChannel: { channel: 'email', target: form.email }
-      });
+      // Verifica solo via email (il backend invia l'OTP alla casella email)
+      nav.navigate('Otp', { userId, channel: 'email', target: form.email });
     } catch (err: any) {
-      setErrors({ email: err.message === 'EMAIL_EXISTS' ? t('auth.errNotFound') : t('common.error') });
+      if (err.message === 'EMAIL_EXISTS') setErrors({ email: t('auth.errEmailExists') });
+      else if (err.message === 'PHONE_EXISTS') setErrors({ phone: t('auth.errPhoneExists') });
+      else setErrors({ email: t('common.error') });
     } finally {
       setLoading(false);
     }
