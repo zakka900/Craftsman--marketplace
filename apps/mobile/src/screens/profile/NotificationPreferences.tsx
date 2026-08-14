@@ -14,10 +14,10 @@ type Prefs = { quotes: boolean; chat: boolean; jobUpdates: boolean; promotions: 
 const DEFAULT_PREFS: Prefs = { quotes: true, chat: true, jobUpdates: true, promotions: false };
 
 /**
- * Preferenze notifiche — solo locali (nessun modello dedicato lato backend):
- * salvate su AsyncStorage, non richiedono connessione. Il tipo di notifica
- * (QUOTE/CHAT/JOB/PROMO) è già distinto in Prisma (enum NotificationType),
- * pronto per un futuro filtro server-side se servisse.
+ * Notification preferences — local only (no dedicated model on the backend):
+ * saved to AsyncStorage, no network connection required. The notification type
+ * (QUOTE/CHAT/JOB/PROMO) is already distinguished in Prisma (NotificationType enum),
+ * ready for a future server-side filter if that's ever needed.
  */
 export default function NotificationPreferences() {
   const { t } = useTranslation();

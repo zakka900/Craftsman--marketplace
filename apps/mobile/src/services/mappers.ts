@@ -1,7 +1,7 @@
 /**
- * MAPPER backend → tipi mobile.
- * Il backend usa enum MAIUSCOLI e nomi campo diversi: qui convertiamo tutto
- * nei tipi di packages/shared usati dalle schermate, senza toccare la UI.
+ * MAPPER backend → mobile types.
+ * The backend uses UPPERCASE enums and different field names: here we convert
+ * everything into the packages/shared types used by the screens, without touching the UI.
  */
 import {
   AppNotification, Artisan, ArtisanReview, ChatMessage, Contract, Conversation,

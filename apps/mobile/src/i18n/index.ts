@@ -16,9 +16,9 @@ i18n.use(initReactI18next).init({
 });
 
 /**
- * Cambio lingua + direzione RTL.
- * Nota: React Native applica il mirroring RTL completo solo dopo un riavvio
- * dell'app (I18nManager.forceRTL ha effetto al reload) — comportamento standard.
+ * Language change + RTL direction.
+ * Note: React Native applies full RTL mirroring only after an app restart
+ * (I18nManager.forceRTL takes effect on reload) — this is standard behavior.
  */
 export async function setLanguage(lang: 'en' | 'ar') {
   await i18n.changeLanguage(lang);
@@ -26,7 +26,7 @@ export async function setLanguage(lang: 'en' | 'ar') {
   if (I18nManager.isRTL !== rtl) {
     I18nManager.allowRTL(rtl);
     I18nManager.forceRTL(rtl);
-    // In produzione: Updates.reloadAsync() per applicare subito il mirroring.
+    // In production: Updates.reloadAsync() to apply the mirroring immediately.
   }
 }
 

@@ -11,7 +11,7 @@ import { useLive } from '../../hooks/useLive';
 import { colors, g } from '../../theme';
 import { timeAgo } from '../../utils/format';
 
-/** Lista conversazioni con badge non letti e anteprima ultimo messaggio. */
+/** Conversation list with unread badges and last-message preview. */
 export default function ChatList() {
   const { t } = useTranslation();
   const nav = useNavigation<any>();

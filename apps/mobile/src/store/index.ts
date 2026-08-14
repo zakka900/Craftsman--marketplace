@@ -25,7 +25,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => set({ user: null, bankStatus: 'none', unread: 0 })
 }));
 
-// ---- Draft della richiesta (wizard multi-step, persiste tra gli step) ----
+// ---- Request draft (multi-step wizard, persists across steps) ----
 export interface RequestDraft {
   categoryId?: string;
   subcategory?: string;

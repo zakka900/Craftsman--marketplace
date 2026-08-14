@@ -29,7 +29,7 @@ export default function Login() {
       if (err.message === 'NOT_FOUND') setError(t('auth.errNotFound'));
       else if (err.message === 'WRONG_PASSWORD') setError(t('auth.errWrongPassword'));
       else if (err.message === 'NOT_VERIFIED') {
-        // Account non verificato → redirect diretto alla verifica OTP mancante
+        // Unverified account → redirect straight to the missing OTP verification
         setError(t('auth.errNotVerified'));
         setTimeout(() => nav.navigate('Otp', {
           userId: err.userId, channel: err.channel, target: identifier,

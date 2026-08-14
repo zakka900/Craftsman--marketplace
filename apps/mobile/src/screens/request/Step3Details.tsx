@@ -20,7 +20,7 @@ const PROPERTY_LABEL: Record<string, string> = {
 };
 const URGENCY_LABEL: Record<string, string> = { now: 'urgencyNow', week: 'urgencyWeek', flexible: 'urgencyFlexible' };
 
-/** Step 3: città (autocomplete), zona, tipo immobile, urgenza, budget opzionale. */
+/** Step 3: city (autocomplete), zone, property type, urgency, optional budget. */
 export default function Step3Details({ onNext }: { onNext: () => void }) {
   const { t } = useTranslation();
   const { draft, patch } = useDraftStore();
@@ -28,7 +28,7 @@ export default function Step3Details({ onNext }: { onNext: () => void }) {
   const [cityQuery, setCityQuery] = useState(draft.city || '');
   const currency = COUNTRIES.find((c) => c.code === user?.country)?.currency || 'SAR';
 
-  // Autocomplete città dei 4 paesi target (prima quelle del paese dell'utente)
+  // City autocomplete across the 4 target countries (user's country first)
   const allCities = useMemo(() => {
     const own = CITIES[user?.country || 'SA'];
     const rest = Object.entries(CITIES).filter(([k]) => k !== user?.country).flatMap(([, v]) => v);
@@ -64,7 +64,7 @@ export default function Step3Details({ onNext }: { onNext: () => void }) {
         <Input label={t('wizard.zone')} value={draft.zone} onChangeText={(zone) => patch({ zone })}
           placeholder={t('wizard.zonePlaceholder')} />
 
-        {/* Tipo immobile — selettore a card */}
+        {/* Property type — card selector */}
         <Text style={styles.label}>{t('wizard.property')}</Text>
         <View style={styles.cardRow}>
           {PROPERTY.map((p) => (
@@ -79,7 +79,7 @@ export default function Step3Details({ onNext }: { onNext: () => void }) {
           ))}
         </View>
 
-        {/* Urgenza — 3 opzioni */}
+        {/* Urgency — 3 options */}
         <Text style={styles.label}>{t('wizard.urgency')}</Text>
         <View style={styles.cardRow}>
           {URGENCY.map((u) => (
@@ -92,7 +92,7 @@ export default function Step3Details({ onNext }: { onNext: () => void }) {
           ))}
         </View>
 
-        {/* Budget opzionale con toggle e range min-max */}
+        {/* Optional budget with toggle and min-max range */}
         <View style={[g.row, { justifyContent: 'space-between', marginTop: 20 }]}>
           <Text style={styles.label}>{t('wizard.budget')} ({t('common.optional')})</Text>
           <Switch value={draft.budgetOn} onValueChange={(budgetOn) => patch({ budgetOn })}

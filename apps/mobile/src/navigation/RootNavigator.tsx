@@ -43,9 +43,9 @@ export default function RootNavigator() {
           <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
         </>
       ) : bankStatus === 'none' ? (
-        // Seconda schermata dopo il primo login: verifica bancaria.
-        // Nome diverso da 'BankVerification' (usato nel ramo principale):
-        // così quando bankStatus cambia il navigatore passa subito a MainTabs.
+        // Second screen after first login: bank verification.
+        // Different name from 'BankVerification' (used in the main branch):
+        // this way, when bankStatus changes, the navigator switches straight to MainTabs.
         <Stack.Screen name="BankOnboarding" component={BankVerification} />
       ) : (
         <>
@@ -68,7 +68,7 @@ export default function RootNavigator() {
           <Stack.Screen name="InviteFriend" component={InviteFriend} />
           <Stack.Screen name="PaymentMethods" component={PaymentMethods} />
           <Stack.Screen name="AccountSettings" component={AccountSettings} />
-          {/* Riusata anche da loggato, per "Cambia password" in Account settings */}
+          {/* Also reused while logged in, for "Change password" in Account settings */}
           <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
         </>
       )}

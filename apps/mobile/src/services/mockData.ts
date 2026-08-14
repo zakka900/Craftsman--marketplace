@@ -62,7 +62,7 @@ export const ARTISANS: Artisan[] = [
   }
 ];
 
-// Suggerimenti AI (mock) per foto, per categoria — l'analisi testo ora è reale (vedi /ai/analyze-text).
+// AI (mock) photo suggestions, per category — text analysis is now real (see /ai/analyze-text).
 export const AI_PHOTO_HINTS: Record<string, string[]> = {
   plumber: ['Add a photo of the water meter area', 'Add a wide shot of the whole bathroom/kitchen'],
   electrician: ['Add a photo of the electrical panel from a distance', 'Add a close-up of the faulty socket/switch'],

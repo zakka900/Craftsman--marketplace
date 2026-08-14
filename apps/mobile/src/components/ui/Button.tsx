@@ -15,8 +15,8 @@ interface Props {
 }
 
 /**
- * Bottone di sistema: micro-animazione di scala al tocco (spring iOS)
- * + feedback aptico leggero. Altezza 52pt = target accessibile.
+ * System button: micro scale animation on tap (iOS spring)
+ * + light haptic feedback. Height 52pt = accessible target.
  */
 export default function Button({ title, onPress, variant = 'primary', loading, disabled, icon, style }: Props) {
   const isPrimary = variant === 'primary';

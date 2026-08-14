@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, shadowStrong } from '../../theme';
 import { hapticTap } from '../../utils/haptics';
 
-/** Bottone flottante "+" per creare una nuova richiesta. */
+/** Floating "+" button to create a new request. */
 export default function FAB({ onPress }: { onPress: () => void }) {
   return (
     <Pressable onPress={() => { hapticTap(); onPress(); }} accessibilityRole="button"

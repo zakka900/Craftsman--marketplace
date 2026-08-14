@@ -3,32 +3,32 @@ import { DynamicColorIOS, Platform, StyleSheet, useColorScheme } from 'react-nat
 /**
  * DESIGN SYSTEM — iOS Human Interface Guidelines.
  *
- * Palette SEMANTICA (non esadecimale rigida): ogni token è un colore dinamico
- * nativo (DynamicColorIOS) che si adatta automaticamente a Light/Dark Mode
- * con transizione di sistema, senza re-render JavaScript.
- * Su Android viene usato il valore light (fallback; Material You in roadmap).
+ * SEMANTIC palette (not rigid hex values): each token is a native
+ * dynamic color (DynamicColorIOS) that automatically adapts to Light/Dark
+ * Mode with a system transition, with no JavaScript re-render.
+ * On Android the light value is used (fallback; Material You is on the roadmap).
  *
- * Griglia spaziature: base 4pt → usare multipli pari per la griglia 8pt.
- * Tipografia: SF Pro (font di sistema iOS) con scala HIG.
+ * Spacing grid: base 4pt → use even multiples for the 8pt grid.
+ * Typography: SF Pro (iOS system font) with the HIG scale.
  */
 
 const dyn = (light: string, dark: string): any =>
   Platform.OS === 'ios' ? DynamicColorIOS({ light, dark }) : light;
 
 export const colors = {
-  // Brand / tinta interattiva — azzurro morbido (design di riferimento)
+  // Brand / interactive tint — soft blue (reference design)
   primary: dyn('#4F80E1', '#5B8DEF'),
   primaryDark: dyn('#3A6BD0', '#6E9DF5'),
   primarySoft: dyn('#E8F0FE', '#16294A'),
-  // Superfici — sfondo lavanda tenue, card bianche
+  // Surfaces — soft lavender background, white cards
   bg: dyn('#EDF0F8', '#0B0E14'),
   card: dyn('#FFFFFF', '#171A21'),
-  // Testo — navy profondo (più morbido del nero puro)
+  // Text — deep navy (softer than pure black)
   text: dyn('#1A2138', '#F5F7FA'),
   sub: dyn('#8A93A6', '#97A0B2'),
-  // Separatori
+  // Separators
   border: dyn('#E6E9F2', '#262B36'),
-  // Semantici di stato
+  // State semantics
   success: dyn('#2FBF71', '#34D17E'),
   successSoft: dyn('#E7F8EF', '#0D2818'),
   danger: dyn('#F0524B', '#FF6259'),
@@ -39,13 +39,13 @@ export const colors = {
   infoSoft: dyn('#E8F0FE', '#16294A')
 };
 
-/** Coppie per gradiente (per LinearGradient se disponibile, o overlay). */
+/** Pairs for gradients (for LinearGradient if available, or overlay). */
 export const gradient = {
   primary: ['#5B8DEF', '#4F80E1'] as [string, string],
   primaryDeep: ['#4F80E1', '#3A6BD0'] as [string, string]
 };
 
-// Tinte soft di sistema per icone categorie / avatar (light, dark)
+// Soft system tints for category icons / avatars (light, dark)
 const PASTEL_PAIRS: [string, string][] = [
   ['#E8F0FE', '#16294A'], ['#E7F8EF', '#0D2818'], ['#FEF3E2', '#2E2005'],
   ['#FDECEB', '#331110'], ['#F0EAFE', '#26143B'], ['#E4F5F8', '#0A2A2E'],
@@ -63,10 +63,10 @@ export const pastelText = PASTEL_TEXT_PAIRS.map(([l, d]) => dyn(l, d));
 
 export const radius = { sm: 10, md: 14, lg: 20, xl: 28, full: 999 };
 
-/** Griglia 4pt: spacing(2)=8, spacing(4)=16, spacing(6)=24 … */
+/** 4pt grid: spacing(2)=8, spacing(4)=16, spacing(6)=24 … */
 export const spacing = (n: number) => n * 4;
 
-// Ombra morbida e diffusa, con tinta blu (profondità del design di riferimento)
+// Soft, diffused shadow with a blue tint (depth from the reference design)
 export const shadow = {
   shadowColor: '#3A5A9B',
   shadowOpacity: 0.10,
@@ -75,7 +75,7 @@ export const shadow = {
   elevation: 3
 };
 
-// Ombra più marcata per elementi flottanti (bottoni primari, FAB, tab bar)
+// Stronger shadow for floating elements (primary buttons, FAB, tab bar)
 export const shadowStrong = {
   shadowColor: '#2F4E8F',
   shadowOpacity: 0.28,
@@ -84,7 +84,7 @@ export const shadowStrong = {
   elevation: 8
 };
 
-/** Scala tipografica iOS HIG (SF Pro, font di sistema). */
+/** iOS HIG typography scale (SF Pro, system font). */
 export const type = StyleSheet.create({
   largeTitle: { fontSize: 34, fontWeight: '800', letterSpacing: 0.2, color: colors.text },
   title1: { fontSize: 28, fontWeight: '800', letterSpacing: 0.1, color: colors.text },
@@ -99,13 +99,13 @@ export const type = StyleSheet.create({
   caption2: { fontSize: 11, fontWeight: '400', color: colors.sub }
 });
 
-/** Hook tema: scheme corrente + palette semantica. */
+/** Theme hook: current scheme + semantic palette. */
 export function useTheme() {
   const scheme = useColorScheme();
   return { dark: scheme === 'dark', colors, type, radius, spacing, shadow };
 }
 
-/** Stili globali retrocompatibili (mappati sulla scala HIG). */
+/** Backward-compatible global styles (mapped onto the HIG scale). */
 export const g = StyleSheet.create({
   card: {
     backgroundColor: colors.card,

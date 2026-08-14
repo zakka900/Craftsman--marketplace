@@ -11,7 +11,7 @@ import PasswordStrengthBar from '../../components/ui/PasswordStrengthBar';
 import { requestPasswordReset, resetPassword } from '../../services/api';
 import { colors, g } from '../../theme';
 
-/** Flusso password dimenticata: identificativo → OTP → nuova password. */
+/** Forgot-password flow: identifier → OTP → new password. */
 export default function ForgotPassword() {
   const { t } = useTranslation();
   const nav = useNavigation<any>();

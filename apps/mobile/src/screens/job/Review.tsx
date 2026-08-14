@@ -9,7 +9,7 @@ import Button from '../../components/ui/Button';
 import { submitReview } from '../../services/api';
 import { colors, g, radius } from '../../theme';
 
-/** Recensione: stelle generali + sotto-valutazioni + testo + foto + "lo riassumeresti?". */
+/** Review: overall stars + sub-ratings + text + photos + "would you recommend them?". */
 function Stars({ value, onChange, size = 34 }: { value: number; onChange: (v: number) => void; size?: number }) {
   return (
     <View style={{ flexDirection: 'row', gap: 6 }}>
@@ -74,13 +74,13 @@ export default function Review() {
         <View style={{ width: 26 }} />
       </View>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
-        {/* Valutazione generale */}
+        {/* Overall rating */}
         <View style={[styles.card, { alignItems: 'center' }]}>
           <Text style={[g.h2, { marginBottom: 12 }]}>{t('review.overall')}</Text>
           <Stars value={rating} onChange={setRating} />
         </View>
 
-        {/* Sotto-valutazioni */}
+        {/* Sub-ratings */}
         <View style={[styles.card, { marginTop: 14 }]}>
           {SUB_KEYS.map((k) => (
             <View key={k} style={[g.row, { justifyContent: 'space-between', marginBottom: 12 }]}>
@@ -90,12 +90,12 @@ export default function Review() {
           ))}
         </View>
 
-        {/* Testo */}
+        {/* Text */}
         <Text style={[g.h2, { marginTop: 18, marginBottom: 8 }]}>{t('review.textPlaceholder')}</Text>
         <TextInput style={styles.textarea} multiline value={text} onChangeText={setText}
           placeholder={t('review.textPlaceholder')} placeholderTextColor="#A8A29E" />
 
-        {/* Foto risultato */}
+        {/* Result photos */}
         <Pressable style={styles.attach} onPress={pick}>
           <Ionicons name="images" size={20} color={colors.primary} />
           <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('review.addPhotos')}</Text>
@@ -108,7 +108,7 @@ export default function Review() {
           </View>
         )}
 
-        {/* Lo riassumeresti? */}
+        {/* Would you recommend them? */}
         <Text style={[g.h2, { marginTop: 18, marginBottom: 8 }]}>{t('review.recommend')}</Text>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           {[true, false].map((v) => (

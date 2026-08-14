@@ -1,11 +1,11 @@
 /**
- * LAYER API REALE — parla con il backend NestJS su Railway.
- * Le firme sono le stesse del vecchio mock: le schermate non cambiano.
+ * REAL API LAYER — talks to the NestJS backend on Railway.
+ * Signatures match the old mock: the screens don't need to change.
  *
- * Strategia: le funzioni sync (getRequests, getArtisan, ...) leggono una cache
- * locale; le azioni async chiamano l'API e aggiornano la cache; subscribe/emit
- * fa ri-renderizzare le schermate (hook useLive). Un polling ogni 15s tiene
- * aggiornati richieste, chat e notifiche (sostituto semplice del realtime).
+ * Strategy: sync functions (getRequests, getArtisan, ...) read from a local
+ * cache; async actions call the API and update the cache; subscribe/emit
+ * triggers screens to re-render (useLive hook). Polling every 15s keeps
+ * requests, chat, and notifications up to date (a simple stand-in for realtime).
  */
 import { io, Socket } from 'socket.io-client';
 import {
@@ -23,10 +23,10 @@ import {
 import { useAuthStore } from '../store';
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-/** In sviluppo il backend accetta il codice 123456; in produzione l'OTP arriva via email. */
+/** In development the backend accepts the code 123456; in production the OTP arrives via email. */
 export const DEMO_OTP = '123456';
 
-// ---------------- CACHE LOCALE ----------------
+// ---------------- LOCAL CACHE ----------------
 const cache = {
   artisans: new Map<string, Artisan>(),
   showcase: [] as { title: string; before: string; after: string; artisan: string; artisanId: string }[],
@@ -51,9 +51,9 @@ export function subscribe(fn: () => void) {
 }
 
 // ---------------- SOCKET.IO (realtime chat) ----------------
-// Il polling ogni 15s resta come rete di sicurezza (riconnessioni, notifiche
-// non di chat); i messaggi e il "sta scrivendo" dentro una conversazione
-// aperta arrivano invece in tempo reale via socket, niente attesa.
+// Polling every 15s remains as a safety net (reconnections, non-chat
+// notifications); messages and the "typing" indicator inside an open
+// conversation instead arrive in real time via socket, with no waiting.
 let socket: Socket | null = null;
 const joinedRooms = new Set<string>();
 
@@ -69,7 +69,7 @@ function connectSocket() {
   socket.on('message', (raw: any) => {
     const msg = toMessage(raw);
     const list = cache.messagesByConv.get(msg.conversationId) ?? [];
-    if (list.some((m) => m.id === msg.id)) return; // già presente (es. eco del mio invio)
+    if (list.some((m) => m.id === msg.id)) return; // already present (e.g. echo of my own send)
     list.push(msg);
     cache.messagesByConv.set(msg.conversationId, list);
     const conv = cache.conversations.find((c) => c.id === msg.conversationId);
@@ -89,7 +89,7 @@ function disconnectSocket() {
   joinedRooms.clear();
 }
 
-/** Entra nella "stanza" della conversazione: da qui in poi i suoi messaggi arrivano via socket. */
+/** Joins the conversation's "room": from here on its messages arrive via socket. */
 function joinRoom(conversationId: string) {
   if (joinedRooms.has(conversationId)) return;
   joinedRooms.add(conversationId);
@@ -132,7 +132,7 @@ async function refreshRequests() {
     const mapped = toRequest(raw, c);
     const prev = prevById.get(mapped.id);
     if (prev) {
-      // La lista non include timeline/aggiornamenti: conserva quelli del dettaglio.
+      // The list doesn't include timeline/updates: preserve the ones from the detail view.
       if (!mapped.history.length) mapped.history = prev.history;
       if (!mapped.jobUpdates.length) mapped.jobUpdates = prev.jobUpdates;
       if (!mapped.zone) mapped.zone = prev.zone;
@@ -167,11 +167,11 @@ let demoTimer: ReturnType<typeof setTimeout> | null = null;
 
 async function refreshAll() {
   await Promise.all([refreshRequests(), refreshNotifications()]);
-  await refreshConversations(); // dopo le notifiche (per i badge non letti)
+  await refreshConversations(); // after notifications (for unread badges)
   emit();
 }
 
-/** Popola chat demo con gli artigiani (no-op se il cliente ha già conversazioni). */
+/** Seeds demo chats with artisans (no-op if the customer already has conversations). */
 async function seedDemoChats() {
   try {
     const res = await api<{ seeded: boolean }>('/conversations/seed-demo', { method: 'POST' });
@@ -184,7 +184,7 @@ async function bootstrap() {
     await refreshArtisans();
     await refreshAll();
   } catch {
-    // offline / primo avvio: le schermate mostrano stati vuoti
+    // offline / first launch: screens show empty states
   }
   if (!pollTimer) pollTimer = setInterval(() => { refreshAll().catch(() => {}); }, 15000);
   if (!demoTimer) demoTimer = setTimeout(() => { seedDemoChats(); }, 10000);
@@ -205,7 +205,7 @@ function teardown() {
   emit();
 }
 
-// Logout dal profilo → pulisci token e cache.
+// Logout from profile → clear token and cache.
 useAuthStore.subscribe((state, prev) => {
   if (prev.user && !state.user) {
     saveToken(null).catch(() => {});
@@ -213,7 +213,7 @@ useAuthStore.subscribe((state, prev) => {
   }
 });
 
-/** Ripristina la sessione all'avvio (token JWT salvato su AsyncStorage). */
+/** Restores the session on startup (JWT token saved in AsyncStorage). */
 export async function restoreSession(): Promise<boolean> {
   const token = await loadToken();
   if (!token) return false;
@@ -228,7 +228,7 @@ export async function restoreSession(): Promise<boolean> {
   }
 }
 
-/** Aggiorna nome/cognome/telefono — PATCH /users/me, già presente lato backend. */
+/** Updates first name/last name/phone — PATCH /users/me, already implemented on the backend. */
 export async function updateProfile(input: { firstName?: string; lastName?: string; phone?: string }): Promise<User> {
   const raw = await api<any>('/users/me', { method: 'PATCH', body: input });
   const user = toUser(raw);
@@ -242,7 +242,7 @@ export interface RegisterInput {
   email: string; password: string;
 }
 
-// Email in attesa di verifica OTP (register/login/reset la impostano).
+// Email pending OTP verification (set by register/login/reset).
 let pendingEmail = '';
 
 export async function register(input: RegisterInput): Promise<{ userId: string }> {
@@ -283,7 +283,7 @@ export async function login(identifier: string, password: string): Promise<User>
     return toUser(res.user);
   } catch (e: any) {
     if (e?.message === 'NOT_VERIFIED') {
-      pendingEmail = email; // il backend ha già re-inviato l'OTP
+      pendingEmail = email; // the backend has already resent the OTP
       e.userId = email;
       e.channel = 'email';
     }
@@ -291,7 +291,7 @@ export async function login(identifier: string, password: string): Promise<User>
   }
 }
 
-/** Social login non ancora attivo sul backend (fase 2: Expo AuthSession). */
+/** Social login not yet active on the backend (phase 2: Expo AuthSession). */
 export async function socialLogin(_provider: 'google' | 'apple'): Promise<User> {
   await delay(300);
   throw new Error('NOT_AVAILABLE');
@@ -308,7 +308,7 @@ export async function resetPassword(identifier: string, code: string, newPasswor
   });
 }
 
-// ---------------- VERIFICA BANCARIA ----------------
+// ---------------- BANK VERIFICATION ----------------
 export function getBanks(countryCode: string): Bank[] {
   return BANKS.filter((b) => b.country === countryCode);
 }
@@ -330,7 +330,7 @@ export async function pollBankVerification(verificationId: string): Promise<'pen
   return res.status;
 }
 
-// ---------------- RICERCA & ARTIGIANI ----------------
+// ---------------- SEARCH & ARTISANS ----------------
 export async function searchArtisans(q: string): Promise<Artisan[]> {
   const list = await api<any[]>(`/artisans?q=${encodeURIComponent(q)}`);
   list.forEach(cacheArtisan);
@@ -340,7 +340,7 @@ export async function searchArtisans(q: string): Promise<Artisan[]> {
 export function getArtisan(artisanId: string): Artisan | undefined {
   const found = cache.artisans.get(artisanId);
   if (!found) {
-    // Non in cache: caricalo in background e ri-renderizza.
+    // Not in cache: load it in the background and re-render.
     api<any>(`/artisans/${artisanId}`).then((a) => { cacheArtisan(a); emit(); }).catch(() => {});
   }
   return found;
@@ -351,7 +351,7 @@ export function getShowcase() {
 }
 
 // ---------------- AI ----------------
-// Testo: analisi reale via backend (Gemini, con fallback mock lato server se manca la chiave).
+// Text: real analysis via backend (Gemini, with a server-side mock fallback if the key is missing).
 export async function aiAnalyzeText(categoryId: string, text: string): Promise<string[]> {
   try {
     const res = await api<{ missingInfo: string[]; questions: string[] }>('/ai/analyze-text', {
@@ -359,7 +359,7 @@ export async function aiAnalyzeText(categoryId: string, text: string): Promise<s
     });
     return res.missingInfo ?? [];
   } catch {
-    return []; // suggerimenti non bloccanti: un errore AI non deve fermare il wizard
+    return []; // non-blocking suggestions: an AI error must not stop the wizard
   }
 }
 
@@ -373,7 +373,7 @@ export async function aiAnalyzePhotos(categoryId: string, photos: string[]): Pro
   return hints;
 }
 
-// ---------------- RICHIESTE ----------------
+// ---------------- REQUESTS ----------------
 export async function createRequest(draft: any, user: User): Promise<JobRequest> {
   const raw = await api<any>('/requests', {
     body: {
@@ -400,7 +400,7 @@ export function getRequests(): JobRequest[] {
   return cache.requests;
 }
 
-// Dettaglio richiesta: fetch in background (max 1 ogni 5s per richiesta).
+// Request detail: fetch in the background (max 1 every 5s per request).
 const lastDetailFetch = new Map<string, number>();
 
 async function fetchRequestDetail(requestId: string) {
@@ -463,7 +463,7 @@ export async function replyInfoRequest(infoId: string, text: string, photos: str
   }
 }
 
-// ---------------- CONTRATTO & PAGAMENTO ----------------
+// ---------------- CONTRACT & PAYMENT ----------------
 export async function createContract(requestId: string, quoteId: string): Promise<Contract> {
   const raw = await api<any>('/contracts', { body: { quoteId } });
   const contract = toContract(raw);
@@ -485,10 +485,10 @@ export async function signContract(contractId: string) {
 }
 
 /**
- * Deposito in escrow con Stripe PaymentSheet:
- * 1) il backend crea il PaymentIntent → clientSecret
- * 2) l'utente paga nel foglio Stripe nativo
- * 3) il webhook Stripe segna il pagamento HELD_ESCROW e avvia il lavoro
+ * Escrow deposit with Stripe PaymentSheet:
+ * 1) the backend creates the PaymentIntent → clientSecret
+ * 2) the user pays in the native Stripe sheet
+ * 3) the Stripe webhook marks the payment HELD_ESCROW and starts the job
  */
 export async function payDeposit(contractId: string): Promise<{ receiptId: string }> {
   const dep = await api<{ paymentId: string; clientSecret: string }>('/payments/deposit', {
@@ -507,7 +507,7 @@ export async function payDeposit(contractId: string): Promise<{ receiptId: strin
     throw new Error(result.error.message || 'PAYMENT_FAILED');
   }
 
-  // Attendi che il webhook confermi (stato richiesta → in_progress)
+  // Wait for the webhook to confirm (request status → in_progress)
   const contract = cache.contracts.get(contractId);
   if (contract) {
     for (let i = 0; i < 7; i++) {
@@ -545,7 +545,7 @@ export function getConversations(): Conversation[] {
   return cache.conversations;
 }
 
-/** Apre (o riusa) una conversazione con un artigiano. Ora async: va atteso con await. */
+/** Opens (or reuses) a conversation with an artisan. Now async: must be awaited. */
 export async function openConversation(artisanId: string, requestId?: string): Promise<Conversation> {
   const raw = await api<any>('/conversations', { body: { artisanId, requestId } });
   cacheArtisan(raw.artisan);
@@ -592,7 +592,7 @@ export async function sendMessage(conversationId: string, text: string, image?: 
   return msg;
 }
 
-// Traduzione contenuti (chat, descrizione richiesta) — cache lato backend, testo originale intatto.
+// Content translation (chat, request description) — cached on the backend, original text left intact.
 export async function translateText(text: string, targetLang: 'en' | 'ar'): Promise<{ translatedText: string; sourceLang: string }> {
   return api<{ translatedText: string; sourceLang: string }>('/translate', { body: { text, targetLang } });
 }
@@ -609,7 +609,7 @@ export function markConversationRead(conversationId: string) {
   emit();
 }
 
-// ---------------- NOTIFICHE ----------------
+// ---------------- NOTIFICATIONS ----------------
 export function getNotifications(): AppNotification[] {
   return cache.notifications;
 }

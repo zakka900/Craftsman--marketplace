@@ -14,8 +14,8 @@ import { money } from '../../utils/format';
 type Method = 'card' | 'applePay' | 'googlePay' | 'mada';
 
 /**
- * Pagamento/deposito con meccanismo escrow.
- * PROVIDER REALE: Tap Payments / PayTabs / Moyasar (mada, Apple Pay, carte GCC).
+ * Payment/deposit with an escrow mechanism.
+ * REAL PROVIDER: Tap Payments / PayTabs / Moyasar (mada, Apple Pay, GCC cards).
  */
 export default function Payment() {
   const { t } = useTranslation();
@@ -29,7 +29,7 @@ export default function Payment() {
   const contract = getContract(params.contractId);
   if (!contract) return null;
 
-  // Limite per conti non verificati (verifica bancaria saltata)
+  // Limit for unverified accounts (bank verification skipped)
   const verified = user?.bankVerified || bankStatus === 'verified';
   const limit = UNVERIFIED_PAYMENT_LIMIT[contract.currency] ?? 1000;
   const blocked = !verified && contract.price > limit;
@@ -47,7 +47,7 @@ export default function Payment() {
       const { receiptId } = await payDeposit(contract.id);
       setReceipt(receiptId);
     } catch (err: any) {
-      // 'CANCELLED' = utente ha chiuso il foglio Stripe: nessun messaggio
+      // 'CANCELLED' = user closed the Stripe sheet: no message
       if (err?.message !== 'CANCELLED') Alert.alert('', t('common.error'));
     } finally {
       setLoading(false);
@@ -92,7 +92,7 @@ export default function Payment() {
           <Text style={[g.body, { flex: 1, lineHeight: 20 }]}>{t('payment.escrow')}</Text>
         </View>
 
-        {/* Metodi di pagamento */}
+        {/* Payment methods */}
         <Text style={[g.h2, { marginTop: 20, marginBottom: 10 }]}>{t('payment.methods')}</Text>
         {methods.map((m) => (
           <Pressable key={m.id} onPress={() => setMethod(m.id)}

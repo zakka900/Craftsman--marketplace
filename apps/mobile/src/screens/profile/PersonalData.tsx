@@ -11,7 +11,7 @@ import { updateProfile } from '../../services/api';
 import { useAuthStore } from '../../store';
 import { colors, g } from '../../theme';
 
-/** Modifica nome/cognome/telefono — PATCH /users/me. Email e paese sono di sola lettura. */
+/** Edit first name/last name/phone — PATCH /users/me. Email and country are read-only. */
 export default function PersonalData() {
   const { t } = useTranslation();
   const nav = useNavigation<any>();

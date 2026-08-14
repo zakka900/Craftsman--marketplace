@@ -37,7 +37,7 @@ export default function ChatRoom() {
   const scrollRef = useRef<ScrollView>(null);
   const lastCount = useRef(messages.length);
 
-  // Tap-to-translate: l'originale resta sempre visibile/ripristinabile, mai sovrascritto.
+  // Tap-to-translate: the original always stays visible/restorable, never overwritten.
   const toggleTranslate = async (messageId: string, original: string) => {
     if (translations[messageId]) {
       setTranslations((prev) => { const next = { ...prev }; delete next[messageId]; return next; });
@@ -57,7 +57,7 @@ export default function ChatRoom() {
     markConversationRead(params.conversationId);
   }, [params.conversationId, messages.length]);
 
-  // Indicatore "sta scrivendo" mock prima della risposta automatica
+  // Mock "typing" indicator before the automatic reply
   useEffect(() => {
     if (messages.length > lastCount.current) {
       const last = messages[messages.length - 1];
@@ -79,7 +79,7 @@ export default function ChatRoom() {
       await sendMessage(params.conversationId, value);
     } catch (err) {
       if (err instanceof ApiError && err.message === 'CONTACT_INFO_BLOCKED') {
-        setText(value); // non perdere quello che l'utente aveva scritto
+        setText(value); // don't lose what the user had typed
         Alert.alert(t('chat.blockedTitle'), t('chat.blockedBody'), [{ text: t('chat.blockedOk') }]);
       } else {
         setText(value);

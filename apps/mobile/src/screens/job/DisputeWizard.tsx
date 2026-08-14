@@ -9,7 +9,7 @@ import Button from '../../components/ui/Button';
 import { openDispute } from '../../services/api';
 import { colors, g, radius } from '../../theme';
 
-/** Wizard disputa: motivo → descrizione → prove foto. Preventivo e chat allegati in automatico. */
+/** Dispute wizard: reason → description → photo evidence. Quote and chat attached automatically. */
 export default function DisputeWizard() {
   const { t } = useTranslation();
   const nav = useNavigation<any>();

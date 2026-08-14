@@ -13,10 +13,10 @@ import { getArtisan } from '../../services/api';
 import { colors, g } from '../../theme';
 
 /**
- * Wizard creazione richiesta (4 step, barra avanzamento in alto).
- * - Da Home con categoria → parte dallo step 2 con categoria precompilata.
- * - Da profilo artigiano → richiesta diretta (categoria dell'artigiano, destinatario fisso).
- * - "Modifica" dal riepilogo → torna allo step senza perdere i dati (draft store condiviso).
+ * Request creation wizard (4 steps, progress bar at the top).
+ * - From Home with a category → starts at step 2 with the category pre-filled.
+ * - From an artisan's profile → direct request (artisan's category, fixed recipient).
+ * - "Edit" from the summary → goes back to the step without losing data (shared draft store).
  */
 export default function CreateRequest() {
   const { t } = useTranslation();
@@ -29,14 +29,14 @@ export default function CreateRequest() {
     const artisan = params?.artisanId ? getArtisan(params.artisanId) : null;
     const categoryId = params?.categoryId || artisan?.categoryId;
     reset({ categoryId, directToArtisanId: params?.artisanId });
-    setStep(categoryId && !artisan ? 1 : 1); // step 1 mostra comunque la sottocategoria da scegliere
+    setStep(categoryId && !artisan ? 1 : 1); // step 1 still shows the subcategory to choose
   }, []);
 
   const directArtisan = draft.directToArtisanId ? getArtisan(draft.directToArtisanId) : null;
 
   return (
     <Screen pad={false}>
-      {/* Header wizard con progresso */}
+      {/* Wizard header with progress */}
       <View style={styles.top}>
         <Pressable onPress={() => (step > 1 ? setStep(step - 1) : nav.goBack())} hitSlop={10}>
           <Ionicons name={step > 1 ? 'arrow-back' : 'close'} size={26} color={colors.text} />

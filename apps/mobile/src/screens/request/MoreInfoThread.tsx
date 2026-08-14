@@ -12,8 +12,8 @@ import { useLive } from '../../hooks/useLive';
 import { colors, g, radius, shadow } from '../../theme';
 
 /**
- * Thread "Richiedi più informazioni": il cliente vede la domanda dell'artigiano
- * e risponde con testo/foto senza ricominciare la richiesta. Salvato in cronologia.
+ * "Request more information" thread: the customer sees the artisan's question
+ * and replies with text/photos without restarting the request. Saved to history.
  */
 export default function MoreInfoThread() {
   const { t } = useTranslation();
@@ -49,7 +49,7 @@ export default function MoreInfoThread() {
         <View style={{ width: 26 }} />
       </View>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
-        {/* Domanda dell'artigiano */}
+        {/* Artisan's question */}
         <View style={styles.question}>
           <View style={[g.row, { gap: 10 }]}>
             <Avatar name={artisan.name} color={artisan.color} size={40} />
@@ -69,7 +69,7 @@ export default function MoreInfoThread() {
           )}
         </View>
 
-        {/* Risposta del cliente */}
+        {/* Customer's reply */}
         {info.reply ? (
           <View style={styles.reply}>
             <View style={[g.row, { gap: 6 }]}>

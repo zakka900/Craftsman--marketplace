@@ -24,9 +24,9 @@ export default function Onboarding() {
   ];
   const last = index === slides.length - 1;
 
-  // Naviga prima di aggiornare lo stato: Login/Register sono registrate
-  // nello stesso ramo del navigatore, quindi la transizione è immediata
-  // e senza race condition quando 'Onboarding' viene rimossa dallo stack.
+  // Navigate before updating state: Login/Register are registered
+  // in the same navigator branch, so the transition is immediate
+  // and free of race conditions when 'Onboarding' gets removed from the stack.
   const finish = (to: 'Register' | 'Login') => {
     nav.navigate(to);
     setOnboarded();

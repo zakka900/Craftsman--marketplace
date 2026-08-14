@@ -8,7 +8,7 @@ import { useAuthStore } from '../../store';
 import { colors, g, radius, shadow, spacing } from '../../theme';
 import { hapticTap } from '../../utils/haptics';
 
-/** Cambio password: riusa il flusso OTP già esistente (ForgotPassword) — nessuna duplicazione di logica. */
+/** Password change: reuses the already existing OTP flow (ForgotPassword) — no logic duplication. */
 export default function AccountSettings() {
   const { t } = useTranslation();
   const nav = useNavigation<any>();

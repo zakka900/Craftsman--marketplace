@@ -11,7 +11,7 @@ interface Props {
   round?: boolean;
 }
 
-/** Avatar: foto oppure iniziali su sfondo colorato. */
+/** Avatar: photo or initials on a colored background. */
 export default function Avatar({ name, uri, size = 44, color = '#4F80E1', round = false }: Props) {
   const br = round ? size / 2 : radius.sm + size / 8;
   if (uri) {

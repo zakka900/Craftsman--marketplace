@@ -13,7 +13,7 @@ const PROPERTY_LABEL: Record<string, string> = {
   house: 'propertyHouse', apartment: 'propertyApartment', office: 'propertyOffice', site: 'propertySite'
 };
 
-/** Step 4: riepilogo con "Modifica" per sezione → invio → conferma → Home. */
+/** Step 4: summary with "Edit" per section → submit → confirmation → Home. */
 export default function Step4Summary({ onEdit }: { onEdit: (step: number) => void }) {
   const { t } = useTranslation();
   const nav = useNavigation<any>();
@@ -27,7 +27,7 @@ export default function Step4Summary({ onEdit }: { onEdit: (step: number) => voi
     await createRequest(draft, user);
     setLoading(false);
     setSent(true);
-    // Redirect automatico alla Home: la richiesta appare in "I tuoi lavori attivi"
+    // Automatic redirect to Home: the request appears under "Your active jobs"
     setTimeout(() => nav.navigate('MainTabs', { screen: 'HomeTab' }), 1800);
   };
 

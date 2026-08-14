@@ -12,7 +12,7 @@ import { useLive } from '../../hooks/useLive';
 import { colors, g, radius, shadow } from '../../theme';
 import { timeAgo } from '../../utils/format';
 
-/** Tracking lavoro: timeline stati + aggiornamenti foto in tempo reale. */
+/** Job tracking: status timeline + real-time photo updates. */
 export default function JobTracking() {
   const { t } = useTranslation();
   const nav = useNavigation<any>();
@@ -46,7 +46,7 @@ export default function JobTracking() {
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 120 }}>
-        {/* Artigiano */}
+        {/* Artisan */}
         {artisan && (
           <View style={[styles.card, g.row, { gap: 12 }]}>
             <Avatar name={artisan.name} color={artisan.color} size={48} />
@@ -57,12 +57,12 @@ export default function JobTracking() {
           </View>
         )}
 
-        {/* Timeline verticale */}
+        {/* Vertical timeline */}
         <View style={[styles.card, { marginTop: 16 }]}>
           <Timeline stage={request.stage} />
         </View>
 
-        {/* Notifica completamento → conferma o disputa */}
+        {/* Completion notification → confirm or dispute */}
         {jobDone && !confirmed && (
           <View style={styles.doneBox}>
             <Ionicons name="checkmark-done-circle" size={28} color={colors.success} />
@@ -73,7 +73,7 @@ export default function JobTracking() {
           </View>
         )}
 
-        {/* Aggiornamenti dell'artigiano */}
+        {/* Artisan's updates */}
         <Text style={[g.h2, { marginTop: 20, marginBottom: 10 }]}>{t('job.updates')}</Text>
         {[...request.jobUpdates].reverse().map((u) => (
           <View key={u.id} style={styles.update}>
@@ -86,7 +86,7 @@ export default function JobTracking() {
         ))}
       </ScrollView>
 
-      {/* "Segnala problema" sempre visibile */}
+      {/* "Report problem" always visible */}
       {!confirmed && request.status !== 'disputed' && (
         <Pressable style={styles.report} onPress={() => nav.navigate('Dispute', { requestId: request.id })}>
           <Ionicons name="flag" size={16} color={colors.danger} />

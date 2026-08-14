@@ -9,7 +9,7 @@ interface Props {
   error?: boolean;
 }
 
-/** Campo OTP a caselle singole (input nascosto + rendering box). */
+/** Single-box OTP field (hidden input + box rendering). */
 export default function OtpInput({ value, onChange, error }: Props) {
   const ref = useRef<TextInput>(null);
   const digits = value.padEnd(OTP_LENGTH).split('').slice(0, OTP_LENGTH);

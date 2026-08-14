@@ -15,7 +15,7 @@ import { shortDate, timeAgo } from '../../utils/format';
 
 type Sort = 'rating' | 'price' | 'time';
 
-/** Dettaglio richiesta: preventivi ricevuti + richieste info + cronologia. */
+/** Request detail: quotes received + info requests + history. */
 export default function RequestDetail() {
   const { t, i18n } = useTranslation();
   const nav = useNavigation<any>();
@@ -58,7 +58,7 @@ export default function RequestDetail() {
         <View style={{ width: 26 }} />
       </View>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
-        {/* Riepilogo richiesta originale */}
+        {/* Original request summary */}
         <View style={styles.summary}>
           <Text style={g.h2}>
             {t(`categories.${request.categoryId}`)} · {t(`subs.${request.categoryId}.${request.subcategory}`)}
@@ -80,13 +80,13 @@ export default function RequestDetail() {
           </Pressable>
         </View>
 
-        {/* Se il lavoro è già in corso → vai al tracking */}
+        {/* If the job is already in progress → go to tracking */}
         {inJob && (
           <Button title={t('job.title')} icon="pulse" style={{ marginTop: 16 }}
             onPress={() => nav.navigate('JobTracking', { requestId: request.id })} />
         )}
 
-        {/* Richieste "più informazioni" dagli artigiani */}
+        {/* "More information" requests from artisans */}
         {infoRequests.length > 0 && (
           <>
             <Text style={[g.h2, { marginTop: 20, marginBottom: 8 }]}>{t('quotes.infoRequests')}</Text>
@@ -108,7 +108,7 @@ export default function RequestDetail() {
           </>
         )}
 
-        {/* Ordinamento preventivi */}
+        {/* Quote sorting */}
         {!inJob && quotes.length > 0 && (
           <View style={[g.row, { gap: 8, marginTop: 20, marginBottom: 4 }]}>
             {(['rating', 'price', 'time'] as Sort[]).map((s) => (
@@ -122,7 +122,7 @@ export default function RequestDetail() {
           </View>
         )}
 
-        {/* Lista preventivi */}
+        {/* Quote list */}
         {!inJob && (quotes.length === 0 ? (
           <View>
             <EmptyState icon="documents-outline" title={t('quotes.empty')} subtitle={t('quotes.emptySub')} />
@@ -146,7 +146,7 @@ export default function RequestDetail() {
           </View>
         ))}
 
-        {/* Cronologia richiesta (utile anche per dispute) */}
+        {/* Request history (also useful for disputes) */}
         <Text style={[g.h2, { marginTop: 20, marginBottom: 8 }]}>{t('quotes.history')}</Text>
         <View style={styles.history}>
           {[...request.history].reverse().map((h) => (

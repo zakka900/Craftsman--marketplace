@@ -14,10 +14,10 @@ import { hapticError, hapticSelect, hapticSuccess } from '../../utils/haptics';
 type Step = 'intro' | 'pending' | 'success' | 'failed';
 
 /**
- * Verifica bancaria Open Banking (mock).
- * Flusso reale: selezione banca → deep-link app bancaria → il cliente approva
- * nella SUA app (push della banca) → polling stato → verificato/fallito.
- * PROVIDER REALE: Lean Technologies / Tarabut Gateway via backend.
+ * Open Banking bank verification (mock).
+ * Real flow: bank selection → deep-link to the banking app → the customer approves
+ * in THEIR OWN app (bank push notification) → status polling → verified/failed.
+ * REAL PROVIDER: Lean Technologies / Tarabut Gateway via backend.
  */
 export default function BankVerification() {
   const { t } = useTranslation();
@@ -37,7 +37,7 @@ export default function BankVerification() {
   const start = async () => {
     if (!selectedBank) return;
     setLoading(true);
-    // In produzione: Linking.openURL(deepLink) verso l'app della banca
+    // In production: Linking.openURL(deepLink) to the bank's app
     const { verificationId } = await startBankVerification(selectedBank.id);
     setLoading(false);
     setStep('pending');
@@ -67,7 +67,7 @@ export default function BankVerification() {
 
       {step === 'intro' && (
         <>
-          {/* Box di trust: perché chiediamo la verifica */}
+          {/* Trust box: why we ask for verification */}
           <View style={styles.trustBox}>
             <View style={[g.row, { gap: 8 }]}>
               <Ionicons name="shield-checkmark" size={20} color={colors.success} />

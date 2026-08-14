@@ -9,7 +9,7 @@ interface Props {
   subtitle: string;
 }
 
-/** Stato vuoto standard: icona illustrativa + titolo + sottotitolo. Mai pagina bianca. */
+/** Standard empty state: illustrative icon + title + subtitle. Never a blank page. */
 export default function EmptyState({ icon, title, subtitle }: Props) {
   return (
     <View style={styles.wrap}>

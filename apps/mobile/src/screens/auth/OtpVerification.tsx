@@ -12,8 +12,8 @@ import { useAuthStore } from '../../store';
 import { colors, g } from '../../theme';
 
 /**
- * Verifica OTP — usata per telefono ed email (schermate separate in sequenza).
- * Il cliente deve verificare ENTRAMBI i canali prima di accedere.
+ * OTP verification — used for both phone and email (separate screens in sequence).
+ * The client must verify BOTH channels before logging in.
  */
 export default function OtpVerification() {
   const { t } = useTranslation();
@@ -47,10 +47,10 @@ export default function OtpVerification() {
     try {
       const user = await verifyOtp(userId, channel, code);
       if (nextChannel) {
-        // Passa alla verifica email (seconda schermata OTP)
+        // Move on to email verification (second OTP screen)
         nav.replace('Otp', { userId, channel: nextChannel.channel, target: nextChannel.target });
       } else {
-        setUser(user); // entrambi verificati → login (poi verifica bancaria)
+        setUser(user); // both verified → login (then bank verification)
       }
     } catch {
       setError(true);

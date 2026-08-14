@@ -40,7 +40,7 @@ export default function Register() {
     setLoading(true);
     try {
       const { userId } = await register(form);
-      // Verifica solo via email (il backend invia l'OTP alla casella email)
+      // Verification via email only (the backend sends the OTP to the email address)
       nav.navigate('Otp', { userId, channel: 'email', target: form.email });
     } catch (err: any) {
       if (err.message === 'EMAIL_EXISTS') setErrors({ email: t('auth.errEmailExists') });

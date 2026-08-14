@@ -11,7 +11,7 @@ import { useLive } from '../../hooks/useLive';
 import { colors, g, radius } from '../../theme';
 import { timeAgo } from '../../utils/format';
 
-// [icona, colore, sfondo soft] — token semantici, compatibili con Dark Mode
+// [icon, color, soft background] — semantic tokens, Dark Mode compatible
 const ICON: Record<NotificationType, [string, string, string]> = {
   quote: ['pricetag', colors.primary, colors.primarySoft],
   info_request: ['help-circle', colors.info, colors.infoSoft],

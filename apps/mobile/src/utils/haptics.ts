@@ -2,32 +2,32 @@ import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 /**
- * Feedback aptico centralizzato (iOS Taptic Engine).
- * Ogni chiamata è fire-and-forget e non può mai far crashare l'app.
+ * Centralized haptic feedback (iOS Taptic Engine).
+ * Every call is fire-and-forget and can never crash the app.
  */
 const ios = Platform.OS === 'ios';
 
-/** Tocco leggero: tap su bottoni, chip, righe di menu. */
+/** Light tap: buttons, chips, menu rows. */
 export const hapticTap = () => {
   if (ios) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 };
 
-/** Selezione: cambio tab, toggle, scelte in un gruppo. */
+/** Selection: tab change, toggles, choices within a group. */
 export const hapticSelect = () => {
   if (ios) Haptics.selectionAsync().catch(() => {});
 };
 
-/** Successo: pagamento riuscito, verifica completata, invio recensione. */
+/** Success: payment succeeded, verification completed, review submitted. */
 export const hapticSuccess = () => {
   if (ios) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 };
 
-/** Avviso: validazione fallita, azione bloccata. */
+/** Warning: validation failed, action blocked. */
 export const hapticWarning = () => {
   if (ios) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
 };
 
-/** Errore: OTP sbagliato, pagamento rifiutato. */
+/** Error: wrong OTP, payment rejected. */
 export const hapticError = () => {
   if (ios) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
 };

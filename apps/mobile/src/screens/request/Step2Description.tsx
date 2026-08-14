@@ -9,7 +9,7 @@ import { aiAnalyzePhotos, aiAnalyzeText } from '../../services/api';
 import { useDraftStore } from '../../store';
 import { colors, g, radius } from '../../theme';
 
-/** Step 2: descrizione + assistente AI testo/foto (suggerimenti non bloccanti). */
+/** Step 2: description + AI text/photo assistant (non-blocking suggestions). */
 export default function Step2Description({ onNext }: { onNext: () => void }) {
   const { t } = useTranslation();
   const { draft, patch } = useDraftStore();
@@ -18,7 +18,7 @@ export default function Step2Description({ onNext }: { onNext: () => void }) {
   const [photoHints, setPhotoHints] = useState<string[]>([]);
   const debounce = useRef<any>(null);
 
-  // Analisi AI del testo mentre l'utente scrive (debounce 1.2s)
+  // AI text analysis while the user types (1.2s debounce)
   useEffect(() => {
     clearTimeout(debounce.current);
     if (draft.description.trim().length < 3) { setTextHints([]); setAiLoading(false); return; }
@@ -34,7 +34,7 @@ export default function Step2Description({ onNext }: { onNext: () => void }) {
     return () => clearTimeout(debounce.current);
   }, [draft.description]);
 
-  // Analisi AI delle foto dopo ogni upload
+  // AI photo analysis after every upload
   useEffect(() => {
     if (!draft.photos.length) { setPhotoHints([]); return; }
     aiAnalyzePhotos(draft.categoryId || 'default', draft.photos).then((hints) =>

@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import Screen from '../../components/ui/Screen';
 import { colors, g, radius, shadow, spacing } from '../../theme';
 
-/** Contenuto statico — nessuna chiamata di rete. Sezioni coerenti con la nota PDPL già mostrata in Profilo. */
+/** Static content — no network calls. Sections consistent with the PDPL notice already shown in Profile. */
 export default function PrivacyPolicy() {
   const { t } = useTranslation();
   const nav = useNavigation<any>();

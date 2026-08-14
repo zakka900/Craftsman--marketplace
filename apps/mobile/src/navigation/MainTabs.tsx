@@ -18,7 +18,7 @@ const ICONS: Record<string, [string, string]> = {
   ProfileTab: ['person', 'person-outline']
 };
 
-/** Icona tab: quando attiva è racchiusa in una pastiglia circolare azzurra. */
+/** Tab icon: when active, it's enclosed in a circular blue pill. */
 function TabIcon({ route, focused }: { route: string; focused: boolean }) {
   const name = (focused ? ICONS[route][0] : ICONS[route][1]) as any;
   return (
@@ -51,7 +51,7 @@ export default function MainTabs() {
 }
 
 const styles = StyleSheet.create({
-  // Tab bar flottante arrotondata, staccata dai bordi
+  // Rounded floating tab bar, detached from the edges
   bar: {
     position: 'absolute',
     left: 18, right: 18, bottom: 22,

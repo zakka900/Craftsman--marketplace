@@ -9,7 +9,7 @@ import Avatar from '../../components/ui/Avatar';
 import { getArtisan, openConversation } from '../../services/api';
 import { colors, g, radius, shadow } from '../../theme';
 
-/** Profilo artigiano visto dal cliente. */
+/** Artisan profile as seen by the client. */
 export default function ArtisanProfile() {
   const { t } = useTranslation();
   const nav = useNavigation<any>();
@@ -74,7 +74,7 @@ export default function ArtisanProfile() {
         <Text style={[g.h2, { marginTop: 20, marginBottom: 8 }]}>{t('artisan.about')}</Text>
         <Text style={[g.body, { lineHeight: 21 }]}>{a.bio}</Text>
 
-        {/* Portfolio prima/dopo */}
+        {/* Before/after portfolio */}
         <Text style={[g.h2, { marginTop: 20, marginBottom: 10 }]}>{t('artisan.portfolio')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {a.portfolio.map((p) => (
@@ -108,7 +108,7 @@ export default function ArtisanProfile() {
         ))}
       </ScrollView>
 
-      {/* CTA fisse: richiesta diretta + chat */}
+      {/* Fixed CTAs: direct request + chat */}
       <View style={styles.footer}>
         <Button title={t('artisan.chat')} variant="outline" style={{ flex: 1 }}
           onPress={async () => {

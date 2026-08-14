@@ -25,7 +25,7 @@ export default function Home() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Artisan[]>([]);
 
-  // Ricerca live artigiani
+  // Live artisan search
   useEffect(() => {
     if (query.trim().length < 2) { setResults([]); return; }
     let alive = true;
@@ -146,7 +146,7 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  // Campo di ricerca: pastiglia bianca morbida con ombra tenue
+  // Search field: soft white pill with a subtle shadow
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card,
     borderRadius: radius.full, paddingHorizontal: 18, height: 54, marginTop: 4, ...shadow

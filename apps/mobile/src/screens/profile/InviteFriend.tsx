@@ -10,8 +10,8 @@ import { colors, g, radius, shadow, spacing } from '../../theme';
 import { hapticTap } from '../../utils/haptics';
 
 /**
- * Codice invito derivato dall'id utente (deterministico, nessuna tabella referral
- * lato backend — il tracking dei referral è fuori scope per questa versione).
+ * Invite code derived from the user id (deterministic, no referral table
+ * on the backend side — referral tracking is out of scope for this version).
  */
 function referralCode(userId: string) {
   return userId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase();

@@ -3,9 +3,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 type MCIName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 /**
- * Icone categorie in stile solido/geometrico professionale
- * (MaterialCommunityIcons). Mappate per id categoria, così restano
- * coerenti in tutta l'app (home, card richiesta, wizard).
+ * Category icons in a solid/geometric professional style
+ * (MaterialCommunityIcons). Mapped by category id, so they stay
+ * consistent across the whole app (home, request card, wizard).
  */
 export const CATEGORY_ICON: Record<string, MCIName> = {
   plumber: 'pipe-wrench',

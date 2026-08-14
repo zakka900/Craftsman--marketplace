@@ -12,8 +12,8 @@ import { colors, g, radius, shadow, spacing } from '../../theme';
 import { hapticSelect, hapticTap, hapticWarning } from '../../utils/haptics';
 
 /**
- * Profilo cliente — pattern "iOS Settings": liste inset grouped,
- * icone in tessere colorate, separatori hairline, chevron, haptics.
+ * Customer profile — "iOS Settings" pattern: inset grouped lists,
+ * icons in colored tiles, hairline separators, chevrons, haptics.
  */
 export default function Profile() {
   const { t, i18n } = useTranslation();
@@ -28,7 +28,7 @@ export default function Profile() {
 
   const toggleLanguage = () => {
     hapticSelect();
-    // Il cambio EN↔AR attiva/disattiva RTL: richiede il riavvio dell'app (nota in i18n/index.ts)
+    // Switching EN↔AR toggles RTL: requires an app restart (see note in i18n/index.ts)
     setLanguage(i18n.language === 'ar' ? 'en' : 'ar');
   };
 
@@ -44,7 +44,7 @@ export default function Profile() {
     <Screen pad={false}>
       <ScrollView contentContainerStyle={{ padding: spacing(4), paddingBottom: spacing(28) }}
         showsVerticalScrollIndicator={false}>
-        {/* Intestazione */}
+        {/* Header */}
         <View style={styles.headerCard}>
           <Avatar name={`${user.firstName} ${user.lastName}`} size={80} round />
           <Text style={styles.name}>{user.firstName} {user.lastName}</Text>
@@ -58,7 +58,7 @@ export default function Profile() {
           )}
         </View>
 
-        {/* Statistiche */}
+        {/* Stats */}
         <View style={styles.stats}>
           <Stat value={String(requests.length)} label={t('profile.statRequests')} />
           <View style={styles.statSep} />
@@ -79,7 +79,7 @@ export default function Profile() {
             onPress={() => nav.navigate('BankVerification', { fromProfile: true })} last />
         </Section>
 
-        {/* Supporto */}
+        {/* Support */}
         <Section>
           <Row icon="lifebuoy" label={t('profile.support')} />
           <Row icon="lock" label={t('profile.privacy')} onPress={() => nav.navigate('PrivacyPolicy')} />
@@ -87,10 +87,10 @@ export default function Profile() {
           <Row icon="cog" label={t('profile.settings')} onPress={() => nav.navigate('AccountSettings')} last />
         </Section>
 
-        {/* Nota conformità privacy (PDPL) */}
+        {/* Privacy compliance notice (PDPL) */}
         <Text style={[g.small, styles.privacyNote]}>{t('profile.privacyNote')}</Text>
 
-        {/* Azioni distruttive */}
+        {/* Destructive actions */}
         <Section>
           <Row icon="logout" label={t('profile.logout')}
             danger onPress={() => { hapticTap(); logout(); }} />
@@ -119,7 +119,7 @@ function Row({ icon, label, value, danger, last, onPress }: {
   icon: string; label: string;
   value?: string; danger?: boolean; last?: boolean; onPress?: () => void;
 }) {
-  // Trattamento uniforme: icona azzurra su tessera chiara (come il riferimento)
+  // Uniform treatment: blue icon on a light tile (matching the reference design)
   return (
     <Pressable
       onPress={onPress ? () => { hapticTap(); onPress(); } : undefined}
