@@ -115,9 +115,13 @@ cp .env.example .env   # punta a VITE_API_URL del backend (Railway o localhost)
 npm run dev
 ```
 
-Login richiede un utente con ruolo `ADMIN` (vedi seed sopra). Attualmente
-espone la coda dispute: risoluzione a favore cliente/artigiano con conferma a
-due step, protetta dallo stesso RBAC del backend.
+Login richiede un utente con ruolo `ADMIN` (vedi seed sopra). Layout a sidebar
+con sezioni: **Overview** (KPI: utenti, artigiani, richieste per stato, incasso,
+dispute aperte), **Utenti**, **Artigiani**, **Richieste** (filtro per stato,
+dettaglio completo con preventivi/contratto/pagamento/disputa/recensione/
+cronologia eventi), **Pagamenti**, **Recensioni**, **Dispute** (risoluzione a
+favore cliente/artigiano con conferma a due step). Tutte le sezioni protette
+dallo stesso RBAC (`@Roles('ADMIN')`) del backend.
 
 ## Test automatici
 
