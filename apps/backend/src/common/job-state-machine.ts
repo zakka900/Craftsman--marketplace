@@ -1,7 +1,7 @@
 /**
- * STATE MACHINE esplicita per RequestStatus (= "Job" nel modello dati: la Request
- * è l'entità centrale con relazioni a Chat, Quote, Payment, Status History/RequestEvent).
- * Nessun salto di stato arbitrario: ogni transizione passa da qui, lato backend.
+ * Explicit STATE MACHINE for RequestStatus (= "Job" in the data model: Request
+ * is the central entity, related to Chat, Quote, Payment, Status History/RequestEvent).
+ * No arbitrary state jumps: every transition goes through here, on the backend side.
  *
  *   AWAITING_QUOTES → QUOTES_RECEIVED → ARTISAN_SELECTED → IN_PROGRESS → COMPLETED
  *                                                                      ↘ DISPUTED → COMPLETED | CANCELLED
@@ -21,13 +21,13 @@ const ALLOWED_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
 };
 
 export function assertTransition(from: RequestStatus, to: RequestStatus) {
-  if (from === to) return; // idempotente (es. secondo preventivo mentre già QUOTES_RECEIVED)
+  if (from === to) return; // idempotent (e.g. a second quote while already QUOTES_RECEIVED)
   if (!ALLOWED_TRANSITIONS[from]?.includes(to)) {
     throw new BadRequestException(`INVALID_TRANSITION: ${from} -> ${to}`);
   }
 }
 
-/** Da ARTISAN_SELECTED in poi (preventivo accettato) i contatti diretti in chat sono sbloccati. */
+/** From ARTISAN_SELECTED onward (quote accepted), direct contact info in chat is unlocked. */
 const CONTACTS_UNLOCKED_STATUSES = new Set<RequestStatus>([
   'ARTISAN_SELECTED', 'IN_PROGRESS', 'COMPLETED', 'DISPUTED'
 ]);
@@ -36,8 +36,8 @@ export function contactsUnlockedForStatus(status: RequestStatus | null | undefin
 }
 
 /**
- * Prepara le operazioni Prisma (update stato + RequestEvent) per una transizione valida.
- * Va eseguito dentro una $transaction insieme alle altre operazioni del chiamante.
+ * Prepares the Prisma operations (status update + RequestEvent) for a valid transition.
+ * Must be run inside a $transaction together with the caller's other operations.
  */
 export function buildTransitionOps(
   prisma: { request: any; requestEvent: any },

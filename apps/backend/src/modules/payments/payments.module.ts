@@ -1,6 +1,6 @@
 /**
- * Binding del provider pagamenti: PaymentService → StripeService.
- * Per cambiare provider in futuro (es. Tap per KSA) si cambia SOLO questa riga.
+ * Payment provider binding: PaymentService → StripeService.
+ * To switch provider in the future (e.g. Tap for KSA), change ONLY this line.
  */
 import { Module } from '@nestjs/common';
 import { PaymentService } from './payment-service.interface';

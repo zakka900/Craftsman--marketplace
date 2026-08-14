@@ -1,4 +1,4 @@
-/** Guard JWT: protegge le rotte; il payload verificato finisce in req.user ({ sub, email }). */
+/** JWT Guard: protects routes; the verified payload ends up in req.user ({ sub, email }). */
 import {
   CanActivate, ExecutionContext, Injectable, UnauthorizedException,
   createParamDecorator
@@ -23,7 +23,7 @@ export class JwtAuthGuard implements CanActivate {
   }
 }
 
-/** @CurrentUser() → id utente autenticato (claim `sub` del JWT). */
+/** @CurrentUser() → authenticated user id (`sub` claim of the JWT). */
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): string =>
     ctx.switchToHttp().getRequest().user?.sub

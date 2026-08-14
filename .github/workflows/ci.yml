@@ -11,9 +11,9 @@ jobs:
     name: Backend — build & test
     runs-on: ubuntu-latest
     env:
-      # I test e2e usano un Prisma finto in memoria: nessun database reale
-      # coinvolto in CI. Serve solo un valore sintatticamente valido perché
-      # `prisma generate` legge DATABASE_URL dallo schema.
+      # The e2e tests use an in-memory fake Prisma: no real database is
+      # involved in CI. This only needs to be a syntactically valid value
+      # because `prisma generate` reads DATABASE_URL from the schema.
       DATABASE_URL: postgresql://user:pass@localhost:5432/ci
       DIRECT_URL: postgresql://user:pass@localhost:5432/ci
       JWT_SECRET: ci-test-secret

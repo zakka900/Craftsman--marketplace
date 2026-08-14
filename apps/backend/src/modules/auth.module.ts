@@ -1,8 +1,8 @@
 /**
- * AUTH — verifica SOLO via EMAIL (niente SMS).
- * Flusso: register → codice 6 cifre via email → verify → JWT.
- * Login richiede email verificata. Reset password sempre via codice email.
- * I codici sono salvati come hash sha256 e scadono in 10 minuti.
+ * AUTH — verification via EMAIL ONLY (no SMS).
+ * Flow: register → 6-digit code via email → verify → JWT.
+ * Login requires a verified email. Password reset is always via email code.
+ * Codes are stored as sha256 hashes and expire after 10 minutes.
  */
 import {
   Body, ConflictException, Controller, ForbiddenException, Injectable, Module,
@@ -12,7 +12,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, Length, MinLength } from 'class-validator';
-import * as bcrypt from 'bcryptjs'; // pure JS: nessuna build nativa (deploy più affidabile)
+import * as bcrypt from 'bcryptjs'; // pure JS: no native build step (more reliable deploys)
 import { createHash, randomInt } from 'crypto';
 import { PrismaService } from '../prisma.service';
 import { MailService } from '../common/mail.service';
@@ -25,7 +25,7 @@ export class RegisterDto {
   @IsEmail() email!: string;
   @MinLength(8) password!: string;
   @IsIn(['SA', 'AE', 'QA', 'KW']) country!: 'SA' | 'AE' | 'QA' | 'KW';
-  @IsOptional() @IsString() phone?: string; // solo anagrafica, non verificato
+  @IsOptional() @IsString() phone?: string; // profile info only, not verified
 }
 
 export class VerifyOtpDto {
@@ -59,7 +59,7 @@ export class AuthService {
   ) {}
 
   private sign(user: { id: string; email: string; role: string }) {
-    // role incluso nel claim: evita una query DB ad ogni richiesta protetta da RolesGuard
+    // role included in the claim: avoids a DB query on every request protected by RolesGuard
     return this.jwt.sign({ sub: user.id, email: user.email, role: user.role });
   }
 
@@ -68,9 +68,9 @@ export class AuthService {
     return rest;
   }
 
-  /** Genera, salva (hash) e invia un codice OTP via email. */
+  /** Generates, stores (hashed) and sends an OTP code via email. */
   private async issueOtp(userId: string, email: string, purpose: 'VERIFY_EMAIL' | 'RESET_PASSWORD') {
-    const code = String(randomInt(100000, 1000000)); // 6 cifre, crypto-safe
+    const code = String(randomInt(100000, 1000000)); // 6 digits, crypto-safe
     await this.prisma.otpCode.deleteMany({ where: { userId, purpose, usedAt: null } });
     await this.prisma.otpCode.create({
       data: { userId, purpose, codeHash: sha256(code), expiresAt: new Date(Date.now() + OTP_TTL_MS) }
@@ -78,9 +78,9 @@ export class AuthService {
     await this.mail.sendOtp(email, code, purpose === 'VERIFY_EMAIL' ? 'verify' : 'reset');
   }
 
-  /** Verifica un codice OTP e lo marca come usato. */
+  /** Verifies an OTP code and marks it as used. */
   private async consumeOtp(userId: string, purpose: 'VERIFY_EMAIL' | 'RESET_PASSWORD', code: string) {
-    // Codice demo consentito SOLO fuori produzione (comodo per i test dell'app)
+    // Demo code allowed ONLY outside production (handy for testing the app)
     const devCode = this.config.get<string>('OTP_DEV_CODE');
     if (devCode && process.env.NODE_ENV !== 'production' && code === devCode) return;
 
@@ -141,7 +141,7 @@ export class AuthService {
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
     if (!ok) throw new UnauthorizedException('WRONG_PASSWORD');
     if (!user.emailVerified) {
-      await this.issueOtp(user.id, user.email, 'VERIFY_EMAIL'); // rimanda alla verifica
+      await this.issueOtp(user.id, user.email, 'VERIFY_EMAIL'); // send back to verification
       throw new ForbiddenException('NOT_VERIFIED');
     }
     return { token: this.sign(user), user: this.safe(user) };
@@ -149,7 +149,7 @@ export class AuthService {
 
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
-    // Risposta identica anche se l'utente non esiste (no user-enumeration)
+    // Identical response even if the user doesn't exist (no user-enumeration)
     if (user) await this.issueOtp(user.id, user.email, 'RESET_PASSWORD');
     return { ok: true };
   }
@@ -173,7 +173,7 @@ export class AuthController {
   @Post('register') register(@Body() dto: RegisterDto) { return this.service.register(dto); }
   @Post('otp/resend') resend(@Body('email') email: string) { return this.service.resendOtp(email); }
 
-  // Rate limiting: 5 tentativi / minuto per IP — mitiga brute-force su codice OTP e password
+  // Rate limiting: 5 attempts / minute per IP — mitigates brute-force on OTP code and password
   @UseGuards(ThrottlerGuard)
   @Post('otp/verify') verify(@Body() dto: VerifyOtpDto) { return this.service.verifyOtp(dto); }
 
@@ -185,17 +185,17 @@ export class AuthController {
 
 @Module({
   imports: [
-    // global: true → JwtService disponibile ovunque (per JwtAuthGuard negli altri moduli)
+    // global: true → JwtService available everywhere (for JwtAuthGuard in other modules)
     JwtModule.registerAsync({
       global: true,
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('JWT_SECRET'), // nessun fallback hardcoded
+        secret: config.getOrThrow<string>('JWT_SECRET'), // no hardcoded fallback
         signOptions: { expiresIn: config.get<string>('JWT_EXPIRES') ?? '7d' }
       })
     }),
-    // 5 richieste / 60s per IP sulle rotte che usano ThrottlerGuard (login, otp/verify)
+    // 5 requests / 60s per IP on routes that use ThrottlerGuard (login, otp/verify)
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 5 }])
   ],
   controllers: [AuthController],

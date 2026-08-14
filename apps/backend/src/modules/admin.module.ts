@@ -1,9 +1,9 @@
 /**
- * ADMIN: dashboard di gestione (dispute, utenti, artigiani, richieste, pagamenti,
- * recensioni). Ogni endpoint richiede @Roles('ADMIN') oltre al JWT — stesso RBAC
- * dimostrato dal modulo dispute originale, esteso a tutte le entità del dominio.
- * Nessuna auto-registrazione: gli account ADMIN si creano solo via seed
- * (prisma/seed-admin.ts), mai da un endpoint pubblico.
+ * ADMIN: management dashboard (disputes, users, artisans, requests, payments,
+ * reviews). Every endpoint requires @Roles('ADMIN') on top of the JWT — the same
+ * RBAC pattern demonstrated by the original dispute module, extended to all domain entities.
+ * No self-registration: ADMIN accounts are only created via seed
+ * (prisma/seed-admin.ts), never from a public endpoint.
  */
 import {
   BadRequestException, Body, Controller, Get, Injectable, Module, NotFoundException,
@@ -202,7 +202,7 @@ export class AdminService {
         const { refundId } = await this.payments.refundPayment(payment.providerId);
         await this.prisma.payment.update({ where: { id: payment.id }, data: { status: 'REFUNDED', refundId } });
       } else if (dto.resolution === 'ARTISAN') {
-        // PROVIDER REALE (fase 2): Stripe Connect transfer all'artigiano
+        // REAL PROVIDER (phase 2): Stripe Connect transfer to the artisan
         await this.prisma.payment.update({ where: { id: payment.id }, data: { status: 'RELEASED' } });
       }
     }

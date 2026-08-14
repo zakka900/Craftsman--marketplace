@@ -1,30 +1,30 @@
-# Artisan Marketplace — App Cliente (GCC)
+# Artisan Marketplace — Client App (GCC)
 
-Marketplace che collega clienti e artigiani nei paesi del Golfo (SA, AE, QA, KW).
-Monorepo: app mobile Expo/React Native + dashboard admin React/Vite + backend NestJS/Prisma (Postgres su Supabase, deploy su Railway) + package condiviso.
+Marketplace connecting clients and artisans across Gulf countries (SA, AE, QA, KW).
+Monorepo: Expo/React Native mobile app + React/Vite admin dashboard + NestJS/Prisma backend (Postgres on Supabase, deployed on Railway) + shared package.
 
-## Architettura
+## Architecture
 
 ```mermaid
 flowchart LR
     subgraph Client["Client"]
-        Mobile["App Cliente\n(Expo / React Native)"]
-        Admin["Dashboard Admin\n(React / Vite)"]
+        Mobile["Client App\n(Expo / React Native)"]
+        Admin["Admin Dashboard\n(React / Vite)"]
     end
 
     subgraph Backend["apps/backend — NestJS"]
         API["REST API\n(/api/*)"]
-        WS["WebSocket Gateway\n(chat realtime)"]
+        WS["WebSocket Gateway\n(realtime chat)"]
         Guards["JWT Auth + RBAC\n(RolesGuard, Throttler)"]
         Health["/api/health\n(Terminus)"]
         Logger["Structured logging\n(nestjs-pino)"]
     end
 
-    subgraph Providers["Provider esterni (dietro interfaccia)"]
-        Gemini["Gemini AI\n(suggerimenti + moderazione)"]
-        Stripe["Stripe\n(pagamenti, test mode)"]
-        Brevo["Brevo\n(email OTP)"]
-        Lean["Open Banking\n(verifica IBAN)"]
+    subgraph Providers["External providers (behind an interface)"]
+        Gemini["Gemini AI\n(suggestions + moderation)"]
+        Stripe["Stripe\n(payments, test mode)"]
+        Brevo["Brevo\n(OTP email)"]
+        Lean["Open Banking\n(IBAN verification)"]
     end
 
     DB[("Postgres\n(Supabase)")]
@@ -47,17 +47,17 @@ flowchart LR
     WS -- "Prisma" --> DB
 ```
 
-Deploy: backend su Railway (Docker o build Node diretto), Postgres su Supabase,
-mobile distribuita via Expo/EAS, dashboard admin come SPA statica (Vite build).
+Deploy: backend on Railway (Docker or direct Node build), Postgres on Supabase,
+mobile distributed via Expo/EAS, admin dashboard as a static SPA (Vite build).
 
-## Struttura
+## Structure
 
-- `apps/mobile` — App Cliente completa (Expo, TypeScript). Ha anche un layer mock (`src/services/mockData.ts`) per lavorare offline, ma di default parla con il backend reale (`src/services/config.ts`).
-- `apps/admin` — Dashboard web (React + Vite + TS) per gli operatori: login con verifica ruolo `ADMIN`, gestione dispute (`/admin/disputes`), stessa API del backend principale.
-- `apps/backend` — NestJS + Prisma, moduli isolati con provider astratti sostituibili (Stripe per i pagamenti, Gemini per l'AI, Lean per l'open banking).
-- `packages/shared` — Tipi, costanti (paesi, città, categorie), validazioni condivise.
+- `apps/mobile` — Full client app (Expo, TypeScript). Also has a mock layer (`src/services/mockData.ts`) to work offline, but talks to the real backend by default (`src/services/config.ts`).
+- `apps/admin` — Web dashboard (React + Vite + TS) for operators: login with `ADMIN` role check, dispute management (`/admin/disputes`), same API as the main backend.
+- `apps/backend` — NestJS + Prisma, isolated modules with swappable provider interfaces (Stripe for payments, Gemini for AI, Lean for open banking).
+- `packages/shared` — Shared types, constants (countries, cities, categories), validations.
 
-## Avvio rapido (app mobile)
+## Quick start (mobile app)
 
 ```bash
 cd apps/mobile
@@ -65,132 +65,135 @@ npm install
 npx expo start
 ```
 
-Apri con Expo Go (iOS/Android) o simulatore.
+Open with Expo Go (iOS/Android) or a simulator.
 
 ## Backend
 
 ```bash
 cd apps/backend
 npm install
-cp .env.example .env   # compila DATABASE_URL/DIRECT_URL (Supabase), JWT_SECRET, ecc.
+cp .env.example .env   # fill in DATABASE_URL/DIRECT_URL (Supabase), JWT_SECRET, etc.
 npx prisma generate
-npx prisma db push     # sincronizza lo schema (nessuna cartella migrations: si usa db push)
+npx prisma db push     # syncs the schema (no migrations folder: db push is used)
 npm run start:dev
 ```
 
-Per creare l'account amministratore (nessun endpoint pubblico lo fa):
+To create the admin account (no public endpoint does this):
 
 ```bash
-# imposta ADMIN_EMAIL / ADMIN_PASSWORD in apps/backend/.env, poi:
+# set ADMIN_EMAIL / ADMIN_PASSWORD in apps/backend/.env, then:
 npm run prisma:seed-admin --workspace apps/backend
 ```
 
-### Backend con Docker (setup locale one-command)
+### Backend with Docker (one-command local setup)
 
-Alternativa a Node in locale: Postgres + backend containerizzati, nessuna
-credenziale Supabase richiesta (usa un database locale usa-e-getta).
+Alternative to running Node locally: Postgres + backend containerized, no
+Supabase credentials required (uses a disposable local database).
 
 ```bash
 docker-compose up --build
 ```
 
-L'API risponde su `http://localhost:3000/api`. Al primo avvio sincronizza
-da solo lo schema Prisma sul Postgres locale.
+The API responds on `http://localhost:3000/api`. On first boot it syncs the
+Prisma schema to the local Postgres automatically.
 
 ### Health check & logging
 
-- `GET /api/health` — usato da Docker/Railway per capire se il servizio è vivo:
-  verifica anche la connettività reale al database (`@nestjs/terminus`), non solo
-  che il processo risponda. Escluso dai log delle richieste per non fare rumore.
-- Logging strutturato via `nestjs-pino`: JSON in produzione (pronto per un log
-  aggregator), formattazione leggibile (`pino-pretty`) in sviluppo. Header
-  sensibili (`Authorization`, `Cookie`) sempre oscurati nei log.
+- `GET /api/health` — used by Docker/Railway to check the service is alive:
+  also verifies real database connectivity (`@nestjs/terminus`), not just that
+  the process responds. Excluded from request logs to avoid noise.
+- Structured logging via `nestjs-pino`: JSON in production (ready for a log
+  aggregator), readable formatting (`pino-pretty`) in development. Sensitive
+  headers (`Authorization`, `Cookie`) are always redacted from logs.
 
-## Dashboard admin
+## Admin dashboard
 
 ```bash
 cd apps/admin
 npm install
-cp .env.example .env   # punta a VITE_API_URL del backend (Railway o localhost)
+cp .env.example .env   # point VITE_API_URL at the backend (Railway or localhost)
 npm run dev
 ```
 
-Login richiede un utente con ruolo `ADMIN` (vedi seed sopra). Layout a sidebar
-con sezioni: **Overview** (KPI: utenti, artigiani, richieste per stato, incasso,
-dispute aperte), **Utenti**, **Artigiani**, **Richieste** (filtro per stato,
-dettaglio completo con preventivi/contratto/pagamento/disputa/recensione/
-cronologia eventi), **Pagamenti**, **Recensioni**, **Dispute** (risoluzione a
-favore cliente/artigiano con conferma a due step). Tutte le sezioni protette
-dallo stesso RBAC (`@Roles('ADMIN')`) del backend.
+Login requires a user with the `ADMIN` role (see seed above). Sidebar layout
+with sections: **Overview** (KPIs: users, artisans, requests by status,
+revenue, open disputes), **Users**, **Artisans**, **Requests** (filter by
+status, full detail view with quotes/contract/payment/dispute/review/event
+timeline), **Payments**, **Reviews**, **Disputes** (resolve in favor of
+client/artisan with two-step confirmation). Every section is protected by the
+same RBAC (`@Roles('ADMIN')`) as the backend.
 
-## Test automatici
+## Automated tests
 
 ```bash
 cd apps/backend
-npm test          # 26 unit test (state machine, moderazione chat, fallback AI)
-npm run test:e2e  # 6 test e2e sul flusso auth (Prisma finto in memoria, nessun DB reale coinvolto)
+npm test          # 26 unit tests (state machine, chat moderation, AI fallback)
+npm run test:e2e  # 6 e2e tests on the auth flow (in-memory fake Prisma, no real DB involved)
 ```
 
-Pipeline CI (GitHub Actions) esegue build + entrambe le suite ad ogni push/PR su `main`.
+CI pipeline (GitHub Actions) runs the build + both suites on every push/PR to `main`.
 
-## Moduli aggiunti per il portfolio
+## Modules added for the portfolio
 
-Sottoinsieme mirato di funzionalità, scelto per essere difendibile a fondo in un
-colloquio tecnico piuttosto che coprire l'intero scope da startup (vedi
-`SPECIFICHE_FUNZIONALITA_PORTFOLIO.md`).
+A focused subset of features, chosen to be defensible in depth during a
+technical interview rather than covering the full scope of a startup.
 
-**1. AI layer (Gemini, free tier)** — due usi concreti nel flusso, non un chatbot
-generico: lato cliente rileva informazioni mancanti nella descrizione della richiesta
-(`POST /ai/analyze-text`); lato professionista suggerisce cosa includere in un
-preventivo (`POST /ai/suggest-quote`). Regola di prodotto imposta *a livello di
-codice* (non solo di prompt): il `disclaimer` restituito è sempre una costante
-lato server, mai testo generato dal modello — l'AI non dichiara mai un prezzo come
-definitivo. Provider dietro un'interfaccia (`AiProvider`, vedi `modules/ai/`) con
-fallback automatico al provider mock se `GEMINI_API_KEY` manca o la chiamata fallisce:
-un suggerimento AI non deve mai rompere il flusso.
+**1. AI layer (Gemini, free tier)** — two concrete uses in the flow, not a
+generic chatbot: on the client side it detects missing information in a
+request's description (`POST /ai/analyze-text`); on the professional side it
+suggests what to include in a quote (`POST /ai/suggest-quote`). A product rule
+enforced *at the code level* (not just in the prompt): the returned
+`disclaimer` is always a server-side constant, never model-generated text —
+the AI never states a price as final. Provider sits behind an interface
+(`AiProvider`, see `modules/ai/`) with automatic fallback to the mock provider
+if `GEMINI_API_KEY` is missing or the call fails: an AI suggestion must never
+break the flow.
 
-**2. Chat con moderazione base** — regex (non NLP) per rilevare numeri di telefono,
-email, link WhatsApp/Telegram/Instagram e URL generici nei messaggi
-(`common/contact-detector.ts`), bloccati finché il preventivo non è accettato
-(`ARTISAN_SELECTED` in poi). Scelta deliberata: per un MVP la regex è più prevedibile
-e verificabile di un classificatore NLP.
+**2. Chat with basic moderation** — regex (not NLP) to detect phone numbers,
+emails, WhatsApp/Telegram/Instagram links and generic URLs in messages
+(`common/contact-detector.ts`), blocked until the quote is accepted
+(`ARTISAN_SELECTED` onward). Deliberate choice: for an MVP, regex is more
+predictable and verifiable than an NLP classifier.
 
-**3. Job Archive** — la `Request` è l'entità centrale (relazioni a Chat, Quote,
-Payment, RequestEvent/Status History). Le transizioni di stato passano tutte da uno
-state machine esplicito (`common/job-state-machine.ts`): nessun salto arbitrario è
-possibile lato backend, indipendentemente da cosa arrivi dal client.
+**3. Job Archive** — `Request` is the central entity (relations to Chat,
+Quote, Payment, RequestEvent/Status History). All state transitions go
+through an explicit state machine (`common/job-state-machine.ts`): no
+arbitrary jump is possible on the backend side, regardless of what the client
+sends.
 
-**4. Sicurezza base** — JWT + OTP via email (bcrypt, codici hashati sha256, TTL 10
-minuti) già presenti; aggiunto: RBAC con `RolesGuard`/`@Roles()`, rate limiting
-(5 tentativi/min) su login e verifica OTP (`@nestjs/throttler`), modulo Admin
-(`/admin/disputes`) come primo endpoint realmente protetto da ruolo. **Nota di
-scope**: il ruolo `Role` enum copre solo `CLIENT` e `ADMIN` — non esiste ancora
-un'app/autenticazione per gli artigiani, quindi il ruolo `ARTISAN` non è stato
-aggiunto ora (roadmap futura). Gli endpoint "lato artigiano" (invio preventivo,
-suggerimento AI) restano aperti come già erano, in attesa di quell'app. La
-protezione IDOR (un cliente non può leggere/modificare risorse di un altro) era già
-presente ovunque tramite il pattern `own()` in ogni service, e resta lo standard per
-qualunque nuovo endpoint.
+**4. Basic security** — JWT + email OTP (bcrypt, sha256-hashed codes, 10-minute
+TTL) were already in place; added: RBAC with `RolesGuard`/`@Roles()`, rate
+limiting (5 attempts/min) on login and OTP verification (`@nestjs/throttler`),
+Admin module (`/admin/disputes` and more) as the first endpoints genuinely
+protected by role. **Scope note**: the `Role` enum only covers `CLIENT` and
+`ADMIN` — there is no artisan app/authentication yet, so the `ARTISAN` role
+wasn't added at this stage (future roadmap). "Artisan-side" endpoints (sending
+a quote, AI suggestion) remain open as they already were, pending that app.
+IDOR protection (a client can't read/modify another client's resources) was
+already present everywhere via the `own()` pattern in each service, and
+remains the standard for any new endpoint.
 
-**5. Traduzione EN/AR** — a differenza dell'i18n dell'interfaccia (già presente,
-`src/i18n`), questa traduce i **contenuti generati dagli utenti** (messaggi chat,
-descrizione richiesta) su richiesta dell'utente ("🌐 Translate" → "View original"),
-con cache lato DB per (hash del testo, lingua target): la stessa traduzione non
-richiama mai due volte l'AI. Il testo originale non viene mai sovrascritto.
+**5. EN/AR translation** — unlike the interface i18n (already present,
+`src/i18n`), this translates **user-generated content** (chat messages,
+request descriptions) on user request ("🌐 Translate" → "View original"),
+with DB-side caching keyed on (text hash, target language): the same
+translation never calls the AI twice. The original text is never overwritten.
 
-### Roadmap futura (fuori scope qui, per scelta)
+### Future roadmap (out of scope here, by choice)
 
-App/autenticazione professionisti (ruolo `ARTISAN`), reliability score, escrow
-regolamentato, moduli AI avanzati (analisi foto via vision model), monetizzazione.
+Professional app/authentication (`ARTISAN` role), reliability score, regulated
+escrow, advanced AI modules (photo analysis via a vision model), monetization.
 
-## Lingue e RTL
+## Languages & RTL
 
-i18n con Inglese e Arabo. Cambiando lingua in Profilo → Lingua, l'app applica RTL
-(serve riavvio dell'app per lo specchiamento completo, comportamento standard React Native).
+i18n with English and Arabic. Switching language in Profile → Language applies
+RTL (requires an app restart for full mirroring, standard React Native
+behavior).
 
-## Note
+## Notes
 
-- Pagamenti (Stripe, in test mode) e verifica bancaria (Open Banking) sono dietro
-  interfacce sostituibili (vedi commenti `// PROVIDER REALE:` nel codice).
-- I preventivi degli artigiani arrivano automaticamente (simulati) ~10–25s dopo l'invio
-  di una richiesta, per poter testare l'intero flusso end-to-end senza un'app artigiani.
+- Payments (Stripe, test mode) and bank verification (Open Banking) sit behind
+  swappable interfaces (see `// REAL PROVIDER:` comments in the code).
+- Artisan quotes arrive automatically (simulated) ~10–25s after a request is
+  submitted, so the entire end-to-end flow can be tested without an artisan
+  app.

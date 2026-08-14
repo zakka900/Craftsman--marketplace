@@ -1,4 +1,4 @@
-/** ARTIGIANI: ricerca live, profilo pubblico (portfolio, recensioni), vetrina prima/dopo. */
+/** ARTISANS: live search, public profile (portfolio, reviews), before/after showcase. */
 import { Controller, Get, Injectable, Module, Param, Query } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
@@ -25,7 +25,7 @@ export class ArtisansService {
   }
 
   showcase() {
-    // Vetrina home: lavori prima/dopo recenti
+    // Home showcase: recent before/after jobs
     return this.prisma.portfolioItem.findMany({ take: 10, include: { artisan: true } });
   }
 }

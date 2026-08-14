@@ -1,7 +1,7 @@
 /**
- * VERIFICA BANCARIA via Open Banking GCC — ora persistita su DB e protetta da JWT.
- * PROVIDER REALE: Lean Technologies (https://leantech.me) — copre KSA, UAE.
- * Implementare LeanBankProvider con link-token + webhook di conferma.
+ * BANK VERIFICATION via GCC Open Banking — now persisted to the DB and protected by JWT.
+ * REAL PROVIDER: Lean Technologies (https://leantech.me) — covers KSA, UAE.
+ * Implement LeanBankProvider with link-token + confirmation webhook.
  */
 import {
   Body, Controller, ForbiddenException, Get, Injectable, Module, NotFoundException,
@@ -31,14 +31,14 @@ export class MockBankProvider implements BankProvider {
   }
 
   async getStatus(providerId: string) {
-    // Simula ~8s di attesa, poi 90% successo
+    // Simulates ~8s of waiting, then 90% success
     const t = this.started.get(providerId);
     if (!t || Date.now() - t < 8000) return 'pending' as const;
     return Math.random() < 0.9 ? ('verified' as const) : ('failed' as const);
   }
 }
 
-// TODO PROVIDER REALE:
+// TODO REAL PROVIDER:
 // export class LeanBankProvider implements BankProvider { ... }
 
 @Injectable()

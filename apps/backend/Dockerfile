@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1
 
-# Build in due stadi: il primo compila (devDependencies incluse, serve prisma CLI
-# e nest CLI), il secondo esegue solo l'output compilato.
+# Two-stage build: the first stage compiles (devDependencies included, needs the
+# prisma CLI and nest CLI), the second stage only runs the compiled output.
 #
-# Nota: `npm ci` installa l'intero monorepo (anche apps/mobile) invece di limitarsi
-# al workspace backend — l'immagine risulta più pesante del necessario, ma la
-# risoluzione degli npm workspaces resta garantita corretta. Scelta deliberata per
-# un progetto portfolio: correttezza prima dell'ottimizzazione della dimensione.
+# Note: `npm ci` installs the entire monorepo (including apps/mobile) instead of
+# limiting itself to the backend workspace — the image ends up heavier than
+# necessary, but npm workspaces resolution is guaranteed correct. Deliberate
+# choice for a portfolio project: correctness before image-size optimization.
 FROM node:20-alpine AS builder
 WORKDIR /app
 

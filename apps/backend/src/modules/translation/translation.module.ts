@@ -1,8 +1,8 @@
 /**
- * TRADUZIONE contenuti utente (non l'interfaccia, già gestita da i18n lato mobile).
- * Cache per (hash testo, lingua target): stesso testo richiesto due volte non
- * richiama l'AI. Il testo originale non viene mai sovrascritto: la cache è
- * un'entità separata (Translation), consultabile ma mai la fonte di verità.
+ * TRANSLATION of user content (not the UI, which is already handled by i18n on mobile).
+ * Cache keyed by (text hash, target language): the same text requested twice
+ * doesn't call the AI again. The original text is never overwritten: the cache is
+ * a separate entity (Translation), queryable but never the source of truth.
  */
 import { Body, Controller, Injectable, Module, Post, UseGuards } from '@nestjs/common';
 import { IsIn, IsNotEmpty, IsString, MaxLength } from 'class-validator';
@@ -33,7 +33,7 @@ export class TranslationService {
     }
 
     const result = await this.ai.translate(text, targetLang);
-    // Se il testo è già nella lingua target (o l'AI non riesce a determinarla), non salvare rumore in cache
+    // If the text is already in the target language (or the AI can't determine it), don't cache noise
     if (result.translatedText.trim() === text.trim()) {
       return { translatedText: result.translatedText, sourceLang: result.sourceLang, cached: false };
     }

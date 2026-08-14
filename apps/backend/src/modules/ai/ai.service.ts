@@ -1,5 +1,5 @@
-/** Sceglie il provider (Gemini se GEMINI_API_KEY è impostata, altrimenti mock) e non lascia
- * mai un errore AI rompere il flusso: su fallimento Gemini ricade silenziosamente sul mock. */
+/** Picks the provider (Gemini if GEMINI_API_KEY is set, otherwise mock) and never lets
+ * an AI error break the flow: on Gemini failure, it silently falls back to the mock. */
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -16,7 +16,7 @@ export class AiService {
 
   constructor(private config: ConfigService, private mock: MockAiProvider) {
     this.real = this.config.get<string>('GEMINI_API_KEY') ? new GeminiAiProvider(this.config) : null;
-    if (!this.real) this.logger.warn('GEMINI_API_KEY non impostata: uso il provider AI mock');
+    if (!this.real) this.logger.warn('GEMINI_API_KEY not set: using the mock AI provider');
   }
 
   private async withFallback<T>(call: (p: AiProvider) => Promise<T>): Promise<T> {
@@ -24,7 +24,7 @@ export class AiService {
       try {
         return await call(this.real);
       } catch (err) {
-        this.logger.error(`Chiamata Gemini fallita, uso il fallback mock: ${err}`);
+        this.logger.error(`Gemini call failed, using the mock fallback: ${err}`);
       }
     }
     return call(this.mock);

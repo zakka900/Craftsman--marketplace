@@ -1,10 +1,10 @@
 /**
- * STRIPE — implementazione di PaymentService per gli UAE.
- * - PaymentIntent con automatic_payment_methods (carte + Apple Pay / Google Pay)
- * - Webhook validati con firma digitale (constructEvent + STRIPE_WEBHOOK_SECRET):
- *   qualsiasi richiesta non firmata da Stripe viene rifiutata con 400.
- * - Escrow: l'incasso resta sul saldo piattaforma (status HELD_ESCROW nel DB);
- *   il giro all'artigiano avverrà con Stripe Connect (transfer) — vedi release().
+ * STRIPE — PaymentService implementation for the UAE.
+ * - PaymentIntent with automatic_payment_methods (cards + Apple Pay / Google Pay)
+ * - Webhooks validated with a digital signature (constructEvent + STRIPE_WEBHOOK_SECRET):
+ *   any request not signed by Stripe is rejected with 400.
+ * - Escrow: funds stay in the platform balance (status HELD_ESCROW in the DB);
+ *   the transfer to the artisan will happen via Stripe Connect (transfer) — see release().
  */
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -13,7 +13,7 @@ import { PrismaService } from '../../prisma.service';
 import { PaymentIntentResult, PaymentService } from './payment-service.interface';
 import { assertTransition } from '../../common/job-state-machine';
 
-/** Valute a 3 decimali (Stripe le tratta in millesimi). AED/SAR/QAR = 2 decimali. */
+/** Currencies with 3 decimals (Stripe treats them in thousandths). AED/SAR/QAR = 2 decimals. */
 const THREE_DECIMALS = new Set(['kwd', 'bhd', 'omr']);
 const toMinorUnits = (amount: number, currency: string) =>
   Math.round(amount * (THREE_DECIMALS.has(currency.toLowerCase()) ? 1000 : 100));
@@ -26,7 +26,7 @@ export class StripeService extends PaymentService {
 
   constructor(private config: ConfigService, private prisma: PrismaService) {
     super();
-    // Chiavi SOLO da variabili d'ambiente — mai hardcoded
+    // Keys ONLY from environment variables — never hardcoded
     this.stripe = new Stripe(this.config.getOrThrow<string>('STRIPE_SECRET_KEY'), {
       apiVersion: '2023-10-16'
     });
@@ -42,7 +42,7 @@ export class StripeService extends PaymentService {
       amount: toMinorUnits(amount, currency),
       currency: currency.toLowerCase(),
       metadata,
-      automatic_payment_methods: { enabled: true } // carte, Apple Pay, Google Pay
+      automatic_payment_methods: { enabled: true } // cards, Apple Pay, Google Pay
     });
     return { id: intent.id, clientSecret: intent.client_secret! };
   }
@@ -50,10 +50,10 @@ export class StripeService extends PaymentService {
   async handleWebhook(rawBody: Buffer, signature: string) {
     let event: Stripe.Event;
     try {
-      // Verifica crittografica della firma: garantisce che l'evento arrivi da Stripe
+      // Cryptographic signature verification: guarantees the event comes from Stripe
       event = this.stripe.webhooks.constructEvent(rawBody, signature, this.webhookSecret);
     } catch (err: any) {
-      this.logger.warn(`Firma webhook NON valida: ${err.message}`);
+      this.logger.warn(`Webhook signature NOT valid: ${err.message}`);
       throw new BadRequestException('INVALID_SIGNATURE');
     }
 
@@ -70,7 +70,7 @@ export class StripeService extends PaymentService {
         break;
       }
       default:
-        this.logger.debug(`Evento ignorato: ${event.type}`);
+        this.logger.debug(`Ignored event: ${event.type}`);
     }
     return { received: true };
   }
@@ -80,23 +80,23 @@ export class StripeService extends PaymentService {
     return { refundId: refund.id };
   }
 
-  // ---------------- reazioni agli eventi ----------------
+  // ---------------- event reactions ----------------
 
   private async onPaymentSucceeded(intent: Stripe.PaymentIntent) {
     const payment = await this.prisma.payment.findUnique({
       where: { providerId: intent.id },
       include: { contract: { include: { request: true } } }
     });
-    if (!payment) { this.logger.warn(`Payment non trovato per ${intent.id}`); return; }
+    if (!payment) { this.logger.warn(`Payment not found for ${intent.id}`); return; }
     assertTransition(payment.contract.request.status, 'IN_PROGRESS');
 
     await this.prisma.$transaction([
-      // Fondi incassati e trattenuti in escrow fino a conferma del cliente
+      // Funds collected and held in escrow until client confirmation
       this.prisma.payment.update({
         where: { id: payment.id },
         data: { status: 'HELD_ESCROW', receiptId: String(intent.latest_charge ?? '') || null }
       }),
-      // Il lavoro parte: richiesta IN_PROGRESS, stage CONFIRMED
+      // Work begins: request IN_PROGRESS, stage CONFIRMED
       this.prisma.request.update({
         where: { id: payment.contract.requestId },
         data: { status: 'IN_PROGRESS', stage: 'CONFIRMED' }

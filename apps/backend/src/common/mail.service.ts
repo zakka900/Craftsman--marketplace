@@ -1,14 +1,14 @@
 /**
- * EMAIL transazionali (codici OTP di verifica e reset password).
- * Priorità: 1) Brevo API HTTP (BREVO_API_KEY) — consigliato, funziona anche dove
- * le porte SMTP sono bloccate (es. Railway trial). 2) SMTP generico (SMTP_HOST/PORT/USER/PASS).
- * 3) Nessuno configurato (sviluppo locale) → il codice viene loggato in console.
+ * Transactional email (verification and password reset OTP codes).
+ * Priority: 1) Brevo HTTP API (BREVO_API_KEY) — recommended, works even where
+ * SMTP ports are blocked (e.g. Railway trial). 2) generic SMTP (SMTP_HOST/PORT/USER/PASS).
+ * 3) Nothing configured (local development) → the code is logged to the console.
  */
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
-/** "Artisan <no-reply@artisan.app>" → { name: 'Artisan', email: 'no-reply@artisan.app' } (Brevo vuole i due campi separati). */
+/** "Artisan <no-reply@artisan.app>" → { name: 'Artisan', email: 'no-reply@artisan.app' } (Brevo wants the two fields separate). */
 function parseFrom(from: string): { name?: string; email: string } {
   const match = from.match(/^(.*)<(.+)>$/);
   if (!match) return { email: from.trim() };
@@ -50,7 +50,7 @@ export class MailService {
     const from = this.config.get<string>('MAIL_FROM') ?? 'Artisan <no-reply@artisan.app>';
 
     if (this.brevoKey) {
-      // Brevo API HTTP (porta 443, mai bloccata)
+      // Brevo HTTP API (port 443, never blocked)
       const res = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
@@ -69,8 +69,8 @@ export class MailService {
     }
 
     if (!this.transporter) {
-      // Sviluppo: nessun provider configurato → log in console
-      this.logger.warn(`[DEV MAIL] ${purpose} → ${to}: codice ${code}`);
+      // Development: no provider configured → log to console
+      this.logger.warn(`[DEV MAIL] ${purpose} → ${to}: code ${code}`);
       return;
     }
     await this.transporter.sendMail({ from, to, subject, html });

@@ -1,7 +1,7 @@
 /**
- * Crea/aggiorna l'unico account ADMIN da variabili d'ambiente (ADMIN_EMAIL, ADMIN_PASSWORD).
- * Nessun endpoint pubblico crea account ADMIN — solo questo script, eseguito manualmente.
- * Uso: npm run prisma:seed-admin --workspace apps/backend
+ * Creates/updates the single ADMIN account from environment variables (ADMIN_EMAIL, ADMIN_PASSWORD).
+ * No public endpoint creates ADMIN accounts — only this script, run manually.
+ * Usage: npm run prisma:seed-admin --workspace apps/backend
  */
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -12,10 +12,10 @@ async function main() {
   const email = process.env.ADMIN_EMAIL?.toLowerCase().trim();
   const password = process.env.ADMIN_PASSWORD;
   if (!email || !password) {
-    throw new Error('Imposta ADMIN_EMAIL e ADMIN_PASSWORD nell\'ambiente prima di eseguire questo script.');
+    throw new Error('Set ADMIN_EMAIL and ADMIN_PASSWORD in the environment before running this script.');
   }
   if (password.length < 8) {
-    throw new Error('ADMIN_PASSWORD deve avere almeno 8 caratteri.');
+    throw new Error('ADMIN_PASSWORD must be at least 8 characters long.');
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
@@ -27,7 +27,7 @@ async function main() {
       firstName: 'Admin', lastName: 'Artisan', country: 'AE'
     }
   });
-  console.log(`Admin pronto: ${admin.email} (id ${admin.id})`);
+  console.log(`Admin ready: ${admin.email} (id ${admin.id})`);
 }
 
 main()

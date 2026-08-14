@@ -1,4 +1,4 @@
-/** RICHIESTE INFO artigiano→cliente: domanda + risposta con testo e foto, salvate nello storico. */
+/** INFO REQUESTS artisan→client: question + reply with text and photos, saved to history. */
 import {
   Body, Controller, ForbiddenException, Get, Injectable, Module, NotFoundException,
   Param, Post, UseGuards
@@ -36,7 +36,7 @@ export class InfoRequestsService {
       this.prisma.requestEvent.create({
         data: { requestId: info.requestId, type: 'info', text: 'Client replied to info request' }
       })
-      // TODO app artigiani: notifica push all'artigiano
+      // TODO artisan app: push notification to the artisan
     ]);
     return updated;
   }

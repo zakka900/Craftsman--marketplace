@@ -6,33 +6,33 @@ import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  // rawBody: true → conserva il body RAW, necessario per validare la firma dei webhook Stripe
+  // rawBody: true → keeps the RAW body, needed to validate the Stripe webhook signature
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
     bufferLogs: true
   });
   app.useLogger(app.get(Logger));
 
-  // In produzione limitare CORS all'origine dell'app (CORS_ORIGIN su Railway)
+  // In production, restrict CORS to the app's origin (CORS_ORIGIN on Railway)
   app.enableCors({ origin: process.env.CORS_ORIGIN?.split(',') ?? true });
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  // Swagger: schema inferito automaticamente dai DTO (plugin @nestjs/swagger in nest-cli.json),
-  // niente @ApiProperty() manuali su ogni campo.
+  // Swagger: schema automatically inferred from the DTOs (@nestjs/swagger plugin in nest-cli.json),
+  // no need for manual @ApiProperty() decorators on every field.
   const swaggerDoc = SwaggerModule.createDocument(
     app,
     new DocumentBuilder()
       .setTitle('Artisan Marketplace API')
-      .setDescription('Marketplace clienti-artigiani (GCC): richieste, preventivi, chat, pagamenti, AI, RBAC.')
+      .setDescription('Client-artisan marketplace (GCC): requests, quotes, chat, payments, AI, RBAC.')
       .setVersion('1.0')
       .addBearerAuth()
       .build()
   );
   SwaggerModule.setup('docs', app, swaggerDoc);
 
-  const port = Number(process.env.PORT) || 3000; // Railway inietta PORT
+  const port = Number(process.env.PORT) || 3000; // Railway injects PORT
   await app.listen(port, '0.0.0.0');
-  console.log(`API pronta sulla porta ${port} (prefix /api) — docs su /docs`);
+  console.log(`API ready on port ${port} (prefix /api) — docs at /docs`);
 }
 bootstrap();

@@ -1,10 +1,10 @@
 /**
- * PAGAMENTI (escrow) — il controller parla SOLO con l'astrazione PaymentService:
- * non sa (e non deve sapere) che sotto c'è Stripe.
+ * PAYMENTS (escrow) — the controller talks ONLY to the PaymentService abstraction:
+ * it doesn't know (and shouldn't know) that Stripe is underneath.
  *
- * Flusso: POST /payments/deposit → clientSecret → l'app conferma con Stripe SDK
- * → webhook firmato aggiorna lo stato (HELD_ESCROW) → alla conferma lavori
- * POST /payments/release → RELEASED (payout artigiano via Stripe Connect, in roadmap).
+ * Flow: POST /payments/deposit → clientSecret → the app confirms with the Stripe SDK
+ * → a signed webhook updates the status (HELD_ESCROW) → on work confirmation
+ * POST /payments/release → RELEASED (artisan payout via Stripe Connect, on the roadmap).
  */
 import {
   BadRequestException, Body, Controller, ForbiddenException, Headers, HttpCode,
@@ -20,14 +20,14 @@ export class DepositDto {
   @IsString() @IsNotEmpty() contractId!: string;
 }
 
-/** Limite pagamento per conti senza verifica bancaria (unità maggiori). */
+/** Payment limit for accounts without bank verification (major units). */
 const UNVERIFIED_LIMIT: Record<string, number> = { AED: 1000, SAR: 1000, QAR: 1000, KWD: 80 };
 
 @Injectable()
 export class PaymentsFlowService {
   constructor(private prisma: PrismaService, private payments: PaymentService) {}
 
-  /** Crea (o riprende) il deposito escrow per un contratto firmato. */
+  /** Creates (or resumes) the escrow deposit for a signed contract. */
   async deposit(userId: string, contractId: string) {
     const contract = await this.prisma.contract.findUnique({
       where: { id: contractId }, include: { client: true, payment: true }
@@ -42,7 +42,7 @@ export class PaymentsFlowService {
     if (!contract.client.bankVerified && contract.price > limit)
       throw new ForbiddenException('BANK_VERIFICATION_REQUIRED');
 
-    // Record locale prima, PaymentIntent poi: il webhook riconcilia via providerId
+    // Local record first, PaymentIntent second: the webhook reconciles via providerId
     const payment = contract.payment
       ? await this.prisma.payment.update({ where: { id: contract.payment.id }, data: { status: 'PENDING' } })
       : await this.prisma.payment.create({
@@ -63,17 +63,17 @@ export class PaymentsFlowService {
     };
   }
 
-  /** Rilascio escrow all'artigiano dopo conferma del cliente. */
+  /** Releases the escrow to the artisan after client confirmation. */
   async release(userId: string, contractId: string) {
     const payment = await this.prisma.payment.findUnique({ where: { contractId } });
     if (!payment) throw new NotFoundException('PAYMENT_NOT_FOUND');
     if (payment.clientId !== userId) throw new ForbiddenException('NOT_YOUR_PAYMENT');
     if (payment.status !== 'HELD_ESCROW') throw new BadRequestException('NOT_IN_ESCROW');
-    // PROVIDER REALE (fase 2): Stripe Connect → transfer al conto dell'artigiano
+    // REAL PROVIDER (phase 2): Stripe Connect → transfer to the artisan's account
     return this.prisma.payment.update({ where: { id: payment.id }, data: { status: 'RELEASED' } });
   }
 
-  /** Rimborso (es. disputa risolta a favore del cliente). Lo stato REFUNDED arriva dal webhook. */
+  /** Refund (e.g. dispute resolved in favor of the client). The REFUNDED status arrives via the webhook. */
   async refund(userId: string, contractId: string) {
     const payment = await this.prisma.payment.findUnique({ where: { contractId } });
     if (!payment?.providerId) throw new NotFoundException('PAYMENT_NOT_FOUND');
@@ -95,8 +95,8 @@ export class PaymentsController {
   }
 
   /**
-   * Webhook Stripe — endpoint PUBBLICO ma protetto dalla firma digitale:
-   * il body RAW (main.ts: rawBody true) viene verificato con STRIPE_WEBHOOK_SECRET.
+   * Stripe webhook — a PUBLIC endpoint but protected by the digital signature:
+   * the RAW body (main.ts: rawBody true) is verified against STRIPE_WEBHOOK_SECRET.
    */
   @Post('webhook')
   @HttpCode(200)

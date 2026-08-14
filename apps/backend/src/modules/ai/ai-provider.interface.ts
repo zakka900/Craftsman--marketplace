@@ -1,10 +1,10 @@
 /**
- * ASTRAZIONE AI — stesso pattern di PaymentService: il resto del backend dipende
- * SOLO da questa interfaccia, mai da Gemini direttamente.
+ * AI ABSTRACTION — same pattern as PaymentService: the rest of the backend depends
+ * ONLY on this interface, never on Gemini directly.
  *
- * Regola di prodotto (vale per ogni implementazione): l'AI non dichiara MAI un
- * prezzo come definitivo. `priceRangeHint` è solo un range indicativo e
- * `disclaimer` è sempre presente — il prezzo finale resta deciso dal professionista.
+ * Product rule (applies to every implementation): the AI NEVER states a price as
+ * final. `priceRangeHint` is only an indicative range and `disclaimer` is always
+ * present — the final price is always decided by the professional.
  */
 
 export interface AnalyzeRequestInput {
@@ -13,9 +13,9 @@ export interface AnalyzeRequestInput {
 }
 
 export interface AnalyzeRequestResult {
-  /** Informazioni che mancano per completare la richiesta (dimensioni, tempistiche, materiali...) */
+  /** Information missing to complete the request (dimensions, timeline, materials...) */
   missingInfo: string[];
-  /** Domande di completamento da proporre al cliente */
+  /** Follow-up questions to propose to the client */
   questions: string[];
 }
 
@@ -31,13 +31,13 @@ export interface SuggestQuoteInput {
 }
 
 export interface SuggestQuoteResult {
-  /** Cosa includere nel preventivo: materiali, tempi, garanzia, costi extra */
+  /** What to include in the quote: materials, timeline, warranty, extra costs */
   suggestions: string[];
-  /** Informazioni chiave mancanti nella richiesta */
+  /** Key information missing from the request */
   missingInfo: string[];
-  /** Range indicativo, MAI un prezzo definitivo */
+  /** Indicative range, NEVER a final price */
   priceRangeHint: { min: number; max: number } | null;
-  /** Sempre presente: chiarisce che è un suggerimento, non un prezzo vincolante */
+  /** Always present: clarifies that this is a suggestion, not a binding price */
   disclaimer: string;
 }
 
@@ -49,7 +49,7 @@ export interface TranslateResult {
 export interface ArtisanReplyInput {
   artisanName: string;
   categoryId: string;
-  /** Ultimi messaggi della conversazione, dal più vecchio al più recente (esclude clientMessage). */
+  /** Latest conversation messages, oldest to newest (excludes clientMessage). */
   history: { from: 'client' | 'artisan'; text: string }[];
   clientMessage: string;
 }
@@ -58,6 +58,6 @@ export abstract class AiProvider {
   abstract analyzeRequest(input: AnalyzeRequestInput): Promise<AnalyzeRequestResult>;
   abstract suggestQuote(input: SuggestQuoteInput): Promise<SuggestQuoteResult>;
   abstract translate(text: string, targetLang: string): Promise<TranslateResult>;
-  /** L'AI risponde IN VECE dell'artigiano (nessuna app artigiani reale) — resta in personaggio. */
+  /** The AI replies ON BEHALF OF the artisan (no real artisan app yet) — stays in character. */
   abstract replyAsArtisan(input: ArtisanReplyInput): Promise<string>;
 }

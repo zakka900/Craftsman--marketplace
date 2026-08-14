@@ -3,7 +3,7 @@ import { AiService } from './ai.service';
 import { MockAiProvider } from './mock-ai.provider';
 import { GeminiAiProvider } from './gemini-ai.provider';
 
-// Gemini fa una vera chiamata di rete: nei test viene sempre sostituito da un doppio controllato.
+// Gemini makes a real network call: in tests it is always replaced by a controlled double.
 jest.mock('./gemini-ai.provider');
 
 describe('AiService', () => {

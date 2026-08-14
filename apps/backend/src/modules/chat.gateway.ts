@@ -1,6 +1,6 @@
 /**
- * CHAT REALTIME via Socket.io + REST per storico conversazioni.
- * Il mock nell'app mobile (src/services/api.ts) va sostituito con questo gateway.
+ * REALTIME CHAT via Socket.io + REST for conversation history.
+ * The mock in the mobile app (src/services/api.ts) needs to be replaced with this gateway.
  */
 import {
   BadRequestException, Body, Controller, ForbiddenException, Get, Injectable, Module,
@@ -23,9 +23,9 @@ export class SendMessageDto {
   @IsOptional() @IsString() imageUrl?: string;
 }
 
-// La ValidationPipe globale (main.ts, whitelist: true) si applica anche ai gestori
-// WebSocket: senza classi vere con decoratori class-validator, il payload verrebbe
-// azzerato in silenzio (nessuna proprietà "riconosciuta" da mantenere).
+// The global ValidationPipe (main.ts, whitelist: true) also applies to WebSocket
+// handlers: without real classes decorated with class-validator, the payload would
+// be silently stripped to nothing (no "recognized" properties to keep).
 export class JoinRoomDto {
   @IsString() @IsNotEmpty() conversationId!: string;
 }
@@ -61,12 +61,12 @@ export class ChatGateway {
     this.server.to(dto.conversationId).emit('seen', dto);
   }
 
-  /** Usato dal controller REST per il broadcast dei messaggi persistiti. */
+  /** Used by the REST controller to broadcast persisted messages. */
   broadcast(conversationId: string, message: unknown) {
     this.server?.to(conversationId).emit('message', message);
   }
 
-  /** Notifica in tempo reale "l'artigiano sta scrivendo" quando l'AI inizia a generare una risposta. */
+  /** Real-time "artisan is typing" notification when the AI starts generating a reply. */
   broadcastTyping(conversationId: string, typing: boolean) {
     this.server?.to(conversationId).emit('typing', { conversationId, from: 'artisan', typing });
   }
@@ -74,7 +74,7 @@ export class ChatGateway {
 
 @Injectable()
 export class ConversationsService {
-  /** Conversazioni con una risposta AI in corso di "digitazione" — stato in memoria, va bene per una demo single-process. */
+  /** Conversations with an AI reply currently "typing" — in-memory state, fine for a single-process demo. */
   private pendingReplies = new Set<string>();
 
   constructor(private prisma: PrismaService, private gateway: ChatGateway, private ai: AiService) {}
@@ -87,8 +87,8 @@ export class ConversationsService {
   }
 
   /**
-   * Sblocco contatti: una conversazione senza richiesta collegata resta sempre moderata
-   * (nessun contratto accettato = nessuna eccezione all'anti-circumvention).
+   * Contact unlock: a conversation without a linked request always stays moderated
+   * (no accepted contract = no exception to anti-circumvention).
    */
   private async contactsUnlocked(requestId: string | null): Promise<boolean> {
     if (!requestId) return false;
@@ -101,7 +101,7 @@ export class ConversationsService {
       where: { clientId: userId },
       include: {
         artisan: true,
-        messages: { orderBy: { createdAt: 'desc' }, take: 1 } // anteprima ultimo messaggio
+        messages: { orderBy: { createdAt: 'desc' }, take: 1 } // last message preview
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -113,11 +113,11 @@ export class ConversationsService {
     );
   }
 
-  /** Apre (o riusa) la conversazione con un artigiano. */
+  /** Opens (or reuses) the conversation with an artisan. */
   async open(userId: string, artisanId: string, requestId?: string) {
     const artisan = await this.prisma.artisan.findUnique({ where: { id: artisanId } });
     if (!artisan) throw new NotFoundException('ARTISAN_NOT_FOUND');
-    // findFirst+create (non upsert): il vincolo unique ha requestId nullable
+    // findFirst+create (not upsert): the unique constraint has a nullable requestId
     const existing = await this.prisma.conversation.findFirst({
       where: { clientId: userId, artisanId, requestId: requestId ?? null },
       include: { artisan: true }
@@ -151,14 +151,14 @@ export class ConversationsService {
       data: { conversationId, from: 'client', text: dto.text, imageUrl: dto.imageUrl }
     });
     this.gateway.broadcast(conversationId, msg);
-    // Nessuna app artigiani reale: l'AI risponde al posto dell'artigiano (non blocca la risposta al client).
+    // No real artisan app: the AI replies on behalf of the artisan (doesn't block the reply to the client).
     this.triggerArtisanReply(conversationId).catch(() => {});
     return msg;
   }
 
-  /** Genera e pubblica una risposta AI "in vece" dell'artigiano, con un ritardo che simula la digitazione umana. */
+  /** Generates and publishes an AI reply "on behalf of" the artisan, with a delay that simulates human typing. */
   private async triggerArtisanReply(conversationId: string) {
-    if (this.pendingReplies.has(conversationId)) return; // già in corso
+    if (this.pendingReplies.has(conversationId)) return; // already in progress
     this.pendingReplies.add(conversationId);
     this.gateway.broadcastTyping(conversationId, true);
     try {
@@ -180,7 +180,7 @@ export class ConversationsService {
         clientMessage: lastClientMsg.text
       });
 
-      // Ritardo realistico: sembra un umano che digita, non una risposta istantanea
+      // Realistic delay: feels like a human typing, not an instant reply
       await new Promise((r) => setTimeout(r, 1800 + Math.random() * 1800));
 
       const artisanMsg = await this.prisma.message.create({
@@ -197,8 +197,8 @@ export class ConversationsService {
   }
 
   /**
-   * Popola 1-2 conversazioni demo al primo accesso (nessuna già presente): una già con un
-   * messaggio dell'artigiano, l'altra mostrata come "sta scrivendo" e completata poco dopo.
+   * Seeds 1-2 demo conversations on first access (none present yet): one already with a
+   * message from the artisan, the other shown as "typing" and completed shortly after.
    */
   async seedDemo(userId: string) {
     const existingCount = await this.prisma.conversation.count({ where: { clientId: userId } });
@@ -219,7 +219,7 @@ export class ConversationsService {
     });
 
     const conv2 = await this.prisma.conversation.create({ data: { clientId: userId, artisanId: a2.id } });
-    this.pendingReplies.add(conv2.id); // visibile subito come "sta scrivendo"
+    this.pendingReplies.add(conv2.id); // immediately visible as "typing"
     this.gateway.broadcastTyping(conv2.id, true);
     this.triggerDemoOpener(conv2.id, a2).catch(() => {});
 

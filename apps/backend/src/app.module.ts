@@ -21,7 +21,7 @@ import { HealthModule } from './modules/health.module';
 @Global()
 @Module({
   imports: [
-    // Tutte le config da variabili d'ambiente (Railway le inietta dal dashboard)
+    // All config comes from environment variables (Railway injects them from the dashboard)
     ConfigModule.forRoot({ isGlobal: true }),
     LoggerModule.forRoot({
       pinoHttp: {

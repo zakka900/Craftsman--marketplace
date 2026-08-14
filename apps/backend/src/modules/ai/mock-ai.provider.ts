@@ -1,7 +1,7 @@
 /**
- * Provider AI mock — deterministico, nessuna chiamata esterna. Usato quando
- * GEMINI_API_KEY non è configurata, e come fallback se la chiamata a Gemini fallisce
- * (i suggerimenti AI sono un aiuto non bloccante, non devono mai rompere il flusso).
+ * Mock AI provider — deterministic, no external calls. Used when
+ * GEMINI_API_KEY is not configured, and as a fallback if the Gemini call fails
+ * (AI suggestions are a non-blocking aid, they must never break the flow).
  */
 import { Injectable } from '@nestjs/common';
 import {
@@ -74,7 +74,7 @@ export class MockAiProvider extends AiProvider {
   }
 
   async translate(text: string): Promise<TranslateResult> {
-    // Nessuna traduzione reale disponibile senza GEMINI_API_KEY: passthrough esplicito.
+    // No real translation available without GEMINI_API_KEY: explicit passthrough.
     return { translatedText: text, sourceLang: 'unknown' };
   }
 

@@ -1,10 +1,10 @@
 /**
- * AI LAYER — due usi distinti nel flusso di prodotto (non un chatbot generico):
- * 1) lato cliente, in fase di creazione richiesta: rileva info mancanti (endpoint
- *    già anticipato da un commento in mobile/mockData.ts: /ai/analyze-text);
- * 2) lato professionista, prima di inviare un preventivo: suggerisce cosa includere.
- *    Endpoint aperto come gli altri endpoint "lato artigiano" già presenti
- *    (quotes.module.ts, info-requests.module.ts) — nessuna app/auth artigiani in questa fase.
+ * AI LAYER — two distinct uses in the product flow (not a generic chatbot):
+ * 1) client side, while creating a request: detects missing info (endpoint
+ *    already anticipated by a comment in mobile/mockData.ts: /ai/analyze-text);
+ * 2) professional side, before sending a quote: suggests what to include.
+ *    Left open like the other "artisan-side" endpoints already present
+ *    (quotes.module.ts, info-requests.module.ts) — no artisan app/auth at this stage.
  */
 import { Body, Controller, Module, NotFoundException, Post, UseGuards } from '@nestjs/common';
 import { IsNotEmpty, IsString, MaxLength } from 'class-validator';

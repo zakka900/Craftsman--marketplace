@@ -1,6 +1,6 @@
 /**
- * NOTIFICHE: lista, segna letta/tutte lette. userId dal JWT, mai da query.
- * PROVIDER REALE push: Expo Push Notifications (o FCM/APNs diretti).
+ * NOTIFICATIONS: list, mark read/all read. userId from the JWT, never from the query.
+ * REAL push PROVIDER: Expo Push Notifications (or direct FCM/APNs).
  */
 import {
   Controller, ForbiddenException, Get, Injectable, Module, NotFoundException,

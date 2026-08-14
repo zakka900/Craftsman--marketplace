@@ -1,6 +1,6 @@
 /**
- * PREVENTIVI: lista per richiesta, invio (lato artigiano — TODO auth app artigiani),
- * badge "Consigliato" (score = rating*2 - (prezzo/prezzoMax)*3).
+ * QUOTES: list per request, submission (artisan side — TODO artisan app auth),
+ * "Recommended" badge (score = rating*2 - (price/maxPrice)*3).
  */
 import {
   Body, Controller, ForbiddenException, Get, Injectable, Module, NotFoundException,
@@ -35,8 +35,8 @@ export class QuotesService {
   }
 
   /**
-   * Invio preventivo — chiamato dall'app ARTIGIANI (in sviluppo).
-   * TODO: quando esisterà l'app artigiani, proteggere con JWT artigiano.
+   * Quote submission — called from the ARTISANS app (in development).
+   * TODO: once the artisan app exists, protect with an artisan JWT.
    */
   async submit(dto: SubmitQuoteDto) {
     const req = await this.prisma.request.findUnique({ where: { id: dto.requestId } });
@@ -64,7 +64,7 @@ export class QuotesService {
     return quote;
   }
 
-  /** Ricalcola il flag `recommended` tra i preventivi di una richiesta. */
+  /** Recalculates the `recommended` flag among the quotes for a request. */
   async markRecommended(requestId: string) {
     const quotes = await this.prisma.quote.findMany({ where: { requestId }, include: { artisan: true } });
     if (quotes.length === 0) return;
@@ -89,7 +89,7 @@ export class QuotesController {
     return this.service.listByRequest(userId, id);
   }
 
-  // Endpoint lato artigiano (TODO: auth dedicata app artigiani)
+  // Artisan-side endpoint (TODO: dedicated artisan app auth)
   @Post() submit(@Body() dto: SubmitQuoteDto) { return this.service.submit(dto); }
 }
 

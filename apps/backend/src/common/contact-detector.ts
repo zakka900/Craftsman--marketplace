@@ -1,7 +1,7 @@
 /**
- * Rileva tentativi di scambiarsi contatti esterni in chat prima dell'accettazione
- * di un preventivo (anti-circumvention del marketplace). Regex + check di stato
- * invece di NLP: scelta deliberata, più prevedibile e verificabile per un MVP.
+ * Detects attempts to exchange external contact info in chat before a quote
+ * has been accepted (marketplace anti-circumvention). Regex + status check
+ * instead of NLP: a deliberate choice, more predictable and testable for an MVP.
  */
 export interface ContactDetectionResult {
   blocked: boolean;

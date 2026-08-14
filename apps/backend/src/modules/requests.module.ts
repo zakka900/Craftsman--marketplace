@@ -1,7 +1,7 @@
 /**
- * RICHIESTE: creazione dal wizard 4 step, lista per tab, dettaglio con timeline,
- * conferma completamento (rilascio escrow), disputa, recensione.
- * Tutte le rotte sono protette: il clientId arriva dal JWT, mai dal body.
+ * REQUESTS: creation from the 4-step wizard, list by tab, detail with timeline,
+ * completion confirmation (escrow release), dispute, review.
+ * All routes are protected: clientId comes from the JWT, never from the body.
  */
 import {
   BadRequestException, Body, Controller, ForbiddenException, Get, Injectable, Module,
@@ -48,7 +48,7 @@ export class ReviewDto {
 export class RequestsService {
   constructor(private prisma: PrismaService) {}
 
-  /** Ritorna la richiesta SOLO se appartiene all'utente. */
+  /** Returns the request ONLY if it belongs to the user. */
   private async own(userId: string, id: string) {
     const req = await this.prisma.request.findUnique({ where: { id } });
     if (!req) throw new NotFoundException('REQUEST_NOT_FOUND');
@@ -106,7 +106,7 @@ export class RequestsService {
     return this.getById(userId, id);
   }
 
-  /** Conferma completamento: stato COMPLETED + rilascio del pagamento in escrow. */
+  /** Completion confirmation: status COMPLETED + release of the escrow payment. */
   async confirmCompletion(userId: string, id: string) {
     const req = await this.own(userId, id);
     assertTransition(req.status, 'COMPLETED');
@@ -117,7 +117,7 @@ export class RequestsService {
       this.prisma.requestEvent.create({ data: { requestId: id, type: 'stage', text: 'Client confirmed completion' } })
     ];
     if (contract?.payment?.status === 'HELD_ESCROW') {
-      // PROVIDER REALE (fase 2): Stripe Connect transfer all'artigiano
+      // REAL PROVIDER (phase 2): Stripe Connect transfer to the artisan
       ops.push(this.prisma.payment.update({ where: { id: contract.payment.id }, data: { status: 'RELEASED' } }));
     }
     await this.prisma.$transaction(ops);
@@ -150,7 +150,7 @@ export class RequestsService {
         text: dto.text, photos: dto.photos ?? [], recommend: dto.recommend
       }
     });
-    // Ricalcolo aggregato rating artigiano
+    // Recompute the artisan's aggregate rating
     const agg = await this.prisma.review.aggregate({
       where: { artisanId: contract.artisanId }, _avg: { rating: true }, _count: true
     });

@@ -2,7 +2,7 @@
   "name": "@artisan/backend",
   "version": "0.1.0",
   "private": true,
-  "description": "Backend NestJS - Marketplace Artigiani (Stripe + Supabase + Railway)",
+  "description": "NestJS backend - Artisan Marketplace (Stripe + Supabase + Railway)",
   "scripts": {
     "start": "node dist/main.js",
     "start:dev": "nest start --watch",

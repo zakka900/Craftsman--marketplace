@@ -1,7 +1,7 @@
-# Setup locale one-command: `docker-compose up --build`
-# Usa un Postgres locale usa-e-getta, separato dal Supabase di produzione
-# (nessuna credenziale reale richiesta). Al primo avvio sincronizza lo
-# schema Prisma automaticamente (prisma db push) prima di avviare l'API.
+# One-command local setup: `docker-compose up --build`
+# Uses a disposable local Postgres, separate from the production Supabase
+# (no real credentials required). On first boot it syncs the Prisma schema
+# automatically (prisma db push) before starting the API.
 services:
   db:
     image: postgres:16-alpine

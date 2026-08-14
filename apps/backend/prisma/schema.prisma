@@ -1,6 +1,6 @@
-// Schema Prisma completo — Marketplace Artigiani (App Cliente)
-// Copre: utenti, OTP, verifica bancaria, artigiani, richieste, preventivi,
-// richieste-info, contratti, pagamenti escrow, lavori, dispute, recensioni, chat, notifiche.
+// Full Prisma schema — Artisan Marketplace (Client App)
+// Covers: users, OTP, bank verification, artisans, requests, quotes,
+// info-requests, contracts, escrow payments, jobs, disputes, reviews, chat, notifications.
 
 generator client {
   provider = "prisma-client-js"
@@ -8,8 +8,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Supabase: DATABASE_URL = connessione pooled (porta 6543, pgbouncer)
-  //           DIRECT_URL   = connessione diretta (porta 5432) per migrazioni/db push
+  // Supabase: DATABASE_URL = pooled connection (port 6543, pgbouncer)
+  //           DIRECT_URL   = direct connection (port 5432) for migrations/db push
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -23,14 +23,14 @@ enum Country {
   KW
 }
 
-// Solo CLIENT e ADMIN in questa fase: nessuna app/auth per artigiani ancora,
-// il valore ARTISAN verrà aggiunto quando esisterà l'app dedicata.
+// Only CLIENT and ADMIN at this stage: no artisan app/auth yet,
+// the ARTISAN value will be added once the dedicated app exists.
 enum Role {
   CLIENT
   ADMIN
 }
 
-// Verifica SOLO via email (niente SMS)
+// Verification via email ONLY (no SMS)
 enum OtpPurpose {
   VERIFY_EMAIL
   RESET_PASSWORD
@@ -99,7 +99,7 @@ enum NotificationType {
   PROMO
 }
 
-// ---------------- MODELLI ----------------
+// ---------------- MODELS ----------------
 
 model User {
   id            String   @id @default(cuid())
@@ -133,7 +133,7 @@ model OtpCode {
   userId    String
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   purpose   OtpPurpose
-  codeHash  String // sha256 del codice: mai in chiaro nel DB
+  codeHash  String // sha256 of the code: never stored in plaintext in the DB
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime   @default(now())
@@ -200,7 +200,7 @@ model Request {
   budgetMax       Int?
   status          RequestStatus @default(AWAITING_QUOTES)
   stage           JobStage?
-  directArtisanId String? // richiesta diretta a un artigiano specifico
+  directArtisanId String? // direct request to a specific artisan
   createdAt       DateTime      @default(now())
 
   quotes       Quote[]
@@ -360,8 +360,8 @@ model Message {
   @@index([conversationId, createdAt])
 }
 
-// Cache traduzioni AI: testo originale sempre conservato, traduzione riusata
-// per lo stesso testo+lingua target invece di richiamare l'AI ogni volta.
+// AI translation cache: original text is always kept, translation is reused
+// for the same text+target language instead of calling the AI every time.
 model Translation {
   id             String   @id @default(cuid())
   sourceHash     String // sha256(testo originale)

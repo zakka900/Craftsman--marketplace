@@ -1,4 +1,4 @@
-/** CONTRATTI digitali: creazione dal preventivo scelto + firma con tap (timestamp). */
+/** Digital CONTRACTS: created from the chosen quote + signature with a tap (timestamp). */
 import {
   BadRequestException, Body, Controller, ForbiddenException, Get, Injectable, Module,
   NotFoundException, Param, Post, UseGuards
@@ -8,7 +8,7 @@ import { PrismaService } from '../prisma.service';
 import { CurrentUser, JwtAuthGuard } from '../common/jwt-auth.guard';
 import { buildTransitionOps } from '../common/job-state-machine';
 
-/** Valuta per paese del cliente. */
+/** Currency by client country. */
 export const CURRENCY: Record<string, string> = { SA: 'SAR', AE: 'AED', QA: 'QAR', KW: 'KWD' };
 
 export class CreateContractDto {
