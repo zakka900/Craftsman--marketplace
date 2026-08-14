@@ -1,5 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { LoggerModule } from 'nestjs-pino';
 import { PrismaService } from './prisma.service';
 import { AuthModule } from './modules/auth.module';
 import { UsersModule } from './modules/users.module';
@@ -15,12 +16,21 @@ import { NotificationsModule } from './modules/notifications.module';
 import { AdminModule } from './modules/admin.module';
 import { AiModule } from './modules/ai/ai.module';
 import { TranslationModule } from './modules/translation/translation.module';
+import { HealthModule } from './modules/health.module';
 
 @Global()
 @Module({
   imports: [
     // Tutte le config da variabili d'ambiente (Railway le inietta dal dashboard)
     ConfigModule.forRoot({ isGlobal: true }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        // Log leggibili in dev, JSON strutturato (per log aggregator) in produzione
+        transport: process.env.NODE_ENV === 'production' ? undefined : { target: 'pino-pretty' },
+        autoLogging: { ignore: (req) => req.url === '/api/health' },
+        redact: ['req.headers.authorization', 'req.headers.cookie']
+      }
+    }),
     AuthModule,
     UsersModule,
     ArtisansModule,
@@ -34,7 +44,8 @@ import { TranslationModule } from './modules/translation/translation.module';
     NotificationsModule,
     AdminModule,
     AiModule,
-    TranslationModule
+    TranslationModule,
+    HealthModule
   ],
   providers: [PrismaService],
   exports: [PrismaService]

@@ -2,11 +2,16 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   // rawBody: true → conserva il body RAW, necessario per validare la firma dei webhook Stripe
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+    bufferLogs: true
+  });
+  app.useLogger(app.get(Logger));
 
   // In produzione limitare CORS all'origine dell'app (CORS_ORIGIN su Railway)
   app.enableCors({ origin: process.env.CORS_ORIGIN?.split(',') ?? true });
