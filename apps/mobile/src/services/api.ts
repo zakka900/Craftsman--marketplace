@@ -7,6 +7,7 @@
  * fa ri-renderizzare le schermate (hook useLive). Un polling ogni 15s tiene
  * aggiornati richieste, chat e notifiche (sostituto semplice del realtime).
  */
+import { io, Socket } from 'socket.io-client';
 import {
   AppNotification, Artisan, Bank, BANKS, ChatMessage, Contract, Conversation,
   COUNTRIES, InfoRequest, JobRequest, Quote, ReviewInput, User
@@ -14,6 +15,7 @@ import {
 import { initPaymentSheet, presentPaymentSheet } from '@stripe/stripe-react-native';
 import { AI_PHOTO_HINTS } from './mockData';
 import { api, loadToken, saveToken } from './http';
+import { API_URL } from './config';
 import {
   CURRENCY, PROP_TO_BACKEND, toArtisan, toContract, toConversation, toInfoRequest,
   toMessage, toNotification, toQuote, toRequest, toUser, URGENCY_TO_BACKEND
@@ -46,6 +48,52 @@ function emit() {
 export function subscribe(fn: () => void) {
   listeners.add(fn);
   return () => { listeners.delete(fn); };
+}
+
+// ---------------- SOCKET.IO (realtime chat) ----------------
+// Il polling ogni 15s resta come rete di sicurezza (riconnessioni, notifiche
+// non di chat); i messaggi e il "sta scrivendo" dentro una conversazione
+// aperta arrivano invece in tempo reale via socket, niente attesa.
+let socket: Socket | null = null;
+const joinedRooms = new Set<string>();
+
+function connectSocket() {
+  if (socket) return;
+  const base = API_URL.replace(/\/api\/?$/, '');
+  socket = io(`${base}/chat`, { transports: ['websocket'], reconnection: true });
+
+  socket.on('connect', () => {
+    joinedRooms.forEach((id) => socket!.emit('join', { conversationId: id }));
+  });
+
+  socket.on('message', (raw: any) => {
+    const msg = toMessage(raw);
+    const list = cache.messagesByConv.get(msg.conversationId) ?? [];
+    if (list.some((m) => m.id === msg.id)) return; // già presente (es. eco del mio invio)
+    list.push(msg);
+    cache.messagesByConv.set(msg.conversationId, list);
+    const conv = cache.conversations.find((c) => c.id === msg.conversationId);
+    if (conv) { conv.lastMessage = msg.text || '📷 Photo'; conv.lastDate = msg.date; }
+    emit();
+  });
+
+  socket.on('typing', (dto: { conversationId: string; typing: boolean }) => {
+    const conv = cache.conversations.find((c) => c.id === dto.conversationId);
+    if (conv) { conv.artisanTyping = dto.typing; emit(); }
+  });
+}
+
+function disconnectSocket() {
+  socket?.disconnect();
+  socket = null;
+  joinedRooms.clear();
+}
+
+/** Entra nella "stanza" della conversazione: da qui in poi i suoi messaggi arrivano via socket. */
+function joinRoom(conversationId: string) {
+  if (joinedRooms.has(conversationId)) return;
+  joinedRooms.add(conversationId);
+  socket?.emit('join', { conversationId });
 }
 
 const country = () => useAuthStore.getState().user?.country ?? 'SA';
@@ -105,7 +153,7 @@ function chatUnread(conversationId: string) {
 
 async function refreshConversations() {
   const list = await api<any[]>('/conversations');
-  list.forEach((c) => cacheArtisan(c.artisan));
+  list.forEach((c) => { cacheArtisan(c.artisan); joinRoom(c.id); });
   cache.conversations = list.map((c) => toConversation(c, chatUnread(c.id)));
 }
 
@@ -140,11 +188,13 @@ async function bootstrap() {
   }
   if (!pollTimer) pollTimer = setInterval(() => { refreshAll().catch(() => {}); }, 15000);
   if (!demoTimer) demoTimer = setTimeout(() => { seedDemoChats(); }, 10000);
+  connectSocket();
 }
 
 function teardown() {
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
   if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
+  disconnectSocket();
   cache.requests = [];
   cache.quotesByRequest.clear();
   cache.infoByRequest.clear();
@@ -499,6 +549,7 @@ export function getConversations(): Conversation[] {
 export async function openConversation(artisanId: string, requestId?: string): Promise<Conversation> {
   const raw = await api<any>('/conversations', { body: { artisanId, requestId } });
   cacheArtisan(raw.artisan);
+  joinRoom(raw.id);
   const conv = toConversation(raw, chatUnread(raw.id));
   const idx = cache.conversations.findIndex((c) => c.id === conv.id);
   if (idx >= 0) cache.conversations[idx] = conv;

@@ -23,6 +23,21 @@ export class SendMessageDto {
   @IsOptional() @IsString() imageUrl?: string;
 }
 
+// La ValidationPipe globale (main.ts, whitelist: true) si applica anche ai gestori
+// WebSocket: senza classi vere con decoratori class-validator, il payload verrebbe
+// azzerato in silenzio (nessuna proprietà "riconosciuta" da mantenere).
+export class JoinRoomDto {
+  @IsString() @IsNotEmpty() conversationId!: string;
+}
+export class TypingDto {
+  @IsString() @IsNotEmpty() conversationId!: string;
+  @IsString() @IsNotEmpty() from!: string;
+}
+export class SeenDto {
+  @IsString() @IsNotEmpty() conversationId!: string;
+  @IsString() @IsNotEmpty() messageId!: string;
+}
+
 @Injectable()
 @WebSocketGateway({ cors: true, namespace: '/chat' })
 export class ChatGateway {
@@ -31,17 +46,17 @@ export class ChatGateway {
   constructor(private prisma: PrismaService) {}
 
   @SubscribeMessage('join')
-  join(@ConnectedSocket() socket: Socket, @MessageBody() dto: { conversationId: string }) {
+  join(@ConnectedSocket() socket: Socket, @MessageBody() dto: JoinRoomDto) {
     socket.join(dto.conversationId);
   }
 
   @SubscribeMessage('typing')
-  typing(@ConnectedSocket() socket: Socket, @MessageBody() dto: { conversationId: string; from: string }) {
+  typing(@ConnectedSocket() socket: Socket, @MessageBody() dto: TypingDto) {
     socket.to(dto.conversationId).emit('typing', dto);
   }
 
   @SubscribeMessage('seen')
-  async seen(@MessageBody() dto: { conversationId: string; messageId: string }) {
+  async seen(@MessageBody() dto: SeenDto) {
     await this.prisma.message.update({ where: { id: dto.messageId }, data: { seenAt: new Date() } });
     this.server.to(dto.conversationId).emit('seen', dto);
   }
@@ -49,6 +64,11 @@ export class ChatGateway {
   /** Usato dal controller REST per il broadcast dei messaggi persistiti. */
   broadcast(conversationId: string, message: unknown) {
     this.server?.to(conversationId).emit('message', message);
+  }
+
+  /** Notifica in tempo reale "l'artigiano sta scrivendo" quando l'AI inizia a generare una risposta. */
+  broadcastTyping(conversationId: string, typing: boolean) {
+    this.server?.to(conversationId).emit('typing', { conversationId, from: 'artisan', typing });
   }
 }
 
@@ -140,6 +160,7 @@ export class ConversationsService {
   private async triggerArtisanReply(conversationId: string) {
     if (this.pendingReplies.has(conversationId)) return; // già in corso
     this.pendingReplies.add(conversationId);
+    this.gateway.broadcastTyping(conversationId, true);
     try {
       const conv = await this.prisma.conversation.findUnique({
         where: { id: conversationId }, include: { artisan: true }
@@ -171,6 +192,7 @@ export class ConversationsService {
       });
     } finally {
       this.pendingReplies.delete(conversationId);
+      this.gateway.broadcastTyping(conversationId, false);
     }
   }
 
@@ -198,6 +220,7 @@ export class ConversationsService {
 
     const conv2 = await this.prisma.conversation.create({ data: { clientId: userId, artisanId: a2.id } });
     this.pendingReplies.add(conv2.id); // visibile subito come "sta scrivendo"
+    this.gateway.broadcastTyping(conv2.id, true);
     this.triggerDemoOpener(conv2.id, a2).catch(() => {});
 
     return { seeded: true };
@@ -220,6 +243,7 @@ export class ConversationsService {
       }
     } finally {
       this.pendingReplies.delete(conversationId);
+      this.gateway.broadcastTyping(conversationId, false);
     }
   }
 }
