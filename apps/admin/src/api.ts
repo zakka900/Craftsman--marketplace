@@ -86,3 +86,144 @@ export function listDisputes(): Promise<Dispute[]> {
 export function resolveDispute(id: string, resolution: 'CLIENT' | 'ARTISAN'): Promise<{ ok: boolean }> {
   return api(`/admin/disputes/${id}/resolve`, { body: { resolution } });
 }
+
+export interface Stats {
+  totalUsers: number;
+  totalArtisans: number;
+  totalRequests: number;
+  requestsByStatus: Record<string, number>;
+  openDisputes: number;
+  revenueByCurrency: { currency: string; total: number }[];
+}
+
+export function getStats(): Promise<Stats> {
+  return api<Stats>('/admin/stats');
+}
+
+export interface Page<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ClientRow {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  country: string;
+  emailVerified: boolean;
+  bankVerified: boolean;
+  createdAt: string;
+  _count: { requests: number };
+}
+
+export function listUsers(page: number, search?: string): Promise<Page<ClientRow>> {
+  const q = new URLSearchParams({ page: String(page), ...(search ? { search } : {}) });
+  return api<Page<ClientRow>>(`/admin/users?${q}`);
+}
+
+export interface ArtisanRow {
+  id: string;
+  name: string;
+  categoryId: string;
+  city: string;
+  country: string;
+  verified: boolean;
+  rating: number;
+  jobsDone: number;
+  _count: { contracts: number };
+}
+
+export function listArtisans(page: number, search?: string): Promise<Page<ArtisanRow>> {
+  const q = new URLSearchParams({ page: String(page), ...(search ? { search } : {}) });
+  return api<Page<ArtisanRow>>(`/admin/artisans?${q}`);
+}
+
+export type RequestStatus =
+  | 'AWAITING_QUOTES' | 'QUOTES_RECEIVED' | 'ARTISAN_SELECTED' | 'IN_PROGRESS'
+  | 'COMPLETED' | 'CANCELLED' | 'DISPUTED';
+
+export interface RequestRow {
+  id: string;
+  categoryId: string;
+  subcategory: string;
+  city: string;
+  status: RequestStatus;
+  createdAt: string;
+  client: { firstName: string; lastName: string; email: string };
+  contract: { price: number; currency: string; artisan: { name: string } } | null;
+  _count: { quotes: number };
+}
+
+export function listRequests(page: number, status?: string): Promise<Page<RequestRow>> {
+  const q = new URLSearchParams({ page: String(page), ...(status ? { status } : {}) });
+  return api<Page<RequestRow>>(`/admin/requests?${q}`);
+}
+
+export interface RequestDetail {
+  id: string;
+  categoryId: string;
+  subcategory: string;
+  description: string;
+  photos: string[];
+  city: string;
+  propertyType: string;
+  urgency: string;
+  budgetMin: number | null;
+  budgetMax: number | null;
+  status: RequestStatus;
+  stage: string | null;
+  createdAt: string;
+  client: { firstName: string; lastName: string; email: string; phone: string | null; country: string };
+  quotes: { id: string; price: number; laborCost: number; materials: number; days: number; note: string | null; recommended: boolean; createdAt: string; artisan: { name: string; city: string } }[];
+  infoRequests: { id: string; question: string; replyText: string | null; createdAt: string; artisan: { name: string } }[];
+  contract: {
+    id: string; price: number; currency: string; scope: string; days: number; signedAt: string | null;
+    artisan: { name: string };
+    payment: { status: string; amount: number; currency: string; method: string } | null;
+  } | null;
+  dispute: { id: string; reason: string; description: string; status: string; createdAt: string } | null;
+  review: { rating: number; quality: number; punctuality: number; cleanliness: number; communication: number; text: string | null; createdAt: string } | null;
+  events: { id: string; type: string; text: string; createdAt: string }[];
+}
+
+export function getRequestDetail(id: string): Promise<RequestDetail> {
+  return api<RequestDetail>(`/admin/requests/${id}`);
+}
+
+export interface PaymentRow {
+  id: string;
+  amount: number;
+  currency: string;
+  method: string;
+  status: 'PENDING' | 'HELD_ESCROW' | 'RELEASED' | 'REFUNDED' | 'FAILED';
+  createdAt: string;
+  client: { firstName: string; lastName: string; email: string };
+  contract: { requestId: string; artisan: { name: string } };
+}
+
+export function listPayments(page: number, status?: string): Promise<Page<PaymentRow>> {
+  const q = new URLSearchParams({ page: String(page), ...(status ? { status } : {}) });
+  return api<Page<PaymentRow>>(`/admin/payments?${q}`);
+}
+
+export interface ReviewRow {
+  id: string;
+  rating: number;
+  quality: number;
+  punctuality: number;
+  cleanliness: number;
+  communication: number;
+  text: string | null;
+  recommend: boolean;
+  createdAt: string;
+  client: { firstName: string; lastName: string };
+  artisan: { name: string };
+}
+
+export function listReviews(page: number): Promise<Page<ReviewRow>> {
+  const q = new URLSearchParams({ page: String(page) });
+  return api<Page<ReviewRow>>(`/admin/reviews?${q}`);
+}

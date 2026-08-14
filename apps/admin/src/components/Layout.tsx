@@ -1,5 +1,15 @@
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { clearToken } from '../api';
+
+const NAV = [
+  { to: '/overview', label: 'Overview', icon: '◧' },
+  { to: '/users', label: 'Utenti', icon: '◍' },
+  { to: '/artisans', label: 'Artigiani', icon: '◆' },
+  { to: '/requests', label: 'Richieste', icon: '▤' },
+  { to: '/payments', label: 'Pagamenti', icon: '◈' },
+  { to: '/reviews', label: 'Recensioni', icon: '★' },
+  { to: '/disputes', label: 'Dispute', icon: '⚑' }
+];
 
 export default function Layout({ children, onLogout }: { children: React.ReactNode; onLogout: () => void }) {
   const nav = useNavigate();
@@ -11,14 +21,26 @@ export default function Layout({ children, onLogout }: { children: React.ReactNo
   };
 
   return (
-    <div className="app-shell">
-      <header className="topbar">
+    <div className="app-shell-side">
+      <aside className="sidebar">
         <div className="brand">
           <span className="brand-dot" />
-          Artisan Marketplace <span className="brand-sub">— Admin</span>
+          Artisan Marketplace
         </div>
-        <button className="btn-ghost" onClick={logout}>Log out</button>
-      </header>
+        <nav className="side-nav">
+          {NAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => 'side-link' + (isActive ? ' active' : '')}
+            >
+              <span className="side-icon">{item.icon}</span>
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+        <button className="btn-ghost logout-btn" onClick={logout}>Log out</button>
+      </aside>
       <main className="content">{children}</main>
     </div>
   );
