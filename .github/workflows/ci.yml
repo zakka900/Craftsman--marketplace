@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend — build & test
+    runs-on: ubuntu-latest
+    env:
+      # I test e2e usano un Prisma finto in memoria: nessun database reale
+      # coinvolto in CI. Serve solo un valore sintatticamente valido perché
+      # `prisma generate` legge DATABASE_URL dallo schema.
+      DATABASE_URL: postgresql://user:pass@localhost:5432/ci
+      DIRECT_URL: postgresql://user:pass@localhost:5432/ci
+      JWT_SECRET: ci-test-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build --workspace apps/backend
+      - run: npm test --workspace apps/backend
+      - run: npm run test:e2e --workspace apps/backend
+
+  mobile:
+    name: Mobile — type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit --project apps/mobile/tsconfig.json
