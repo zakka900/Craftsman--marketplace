@@ -1,0 +1,41 @@
+# Setup locale one-command: `docker-compose up --build`
+# Usa un Postgres locale usa-e-getta, separato dal Supabase di produzione
+# (nessuna credenziale reale richiesta). Al primo avvio sincronizza lo
+# schema Prisma automaticamente (prisma db push) prima di avviare l'API.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: artisan
+      POSTGRES_PASSWORD: artisan
+      POSTGRES_DB: artisan
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U artisan"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://artisan:artisan@db:5432/artisan
+      DIRECT_URL: postgresql://artisan:artisan@db:5432/artisan
+      JWT_SECRET: dev-secret-change-me
+      JWT_EXPIRES: 7d
+      OTP_DEV_CODE: "123456"
+      NODE_ENV: development
+    command: sh -c "npx prisma db push --skip-generate --schema apps/backend/prisma/schema.prisma && node apps/backend/dist/main.js"
+    ports:
+      - "3000:3000"
+
+volumes:
+  db_data:

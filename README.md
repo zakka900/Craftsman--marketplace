@@ -37,6 +37,28 @@ Per creare l'account amministratore (nessun endpoint pubblico lo fa):
 npm run prisma:seed-admin --workspace apps/backend
 ```
 
+### Backend con Docker (setup locale one-command)
+
+Alternativa a Node in locale: Postgres + backend containerizzati, nessuna
+credenziale Supabase richiesta (usa un database locale usa-e-getta).
+
+```bash
+docker-compose up --build
+```
+
+L'API risponde su `http://localhost:3000/api`. Al primo avvio sincronizza
+da solo lo schema Prisma sul Postgres locale.
+
+## Test automatici
+
+```bash
+cd apps/backend
+npm test          # 26 unit test (state machine, moderazione chat, fallback AI)
+npm run test:e2e  # 6 test e2e sul flusso auth (Prisma finto in memoria, nessun DB reale coinvolto)
+```
+
+Pipeline CI (GitHub Actions) esegue build + entrambe le suite ad ogni push/PR su `main`.
+
 ## Moduli aggiunti per il portfolio
 
 Sottoinsieme mirato di funzionalità, scelto per essere difendibile a fondo in un
