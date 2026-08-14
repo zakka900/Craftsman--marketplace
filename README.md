@@ -1,11 +1,59 @@
 # Artisan Marketplace — App Cliente (GCC)
 
 Marketplace che collega clienti e artigiani nei paesi del Golfo (SA, AE, QA, KW).
-Monorepo: app mobile Expo/React Native + backend NestJS/Prisma (Postgres su Supabase, deploy su Railway) + package condiviso.
+Monorepo: app mobile Expo/React Native + dashboard admin React/Vite + backend NestJS/Prisma (Postgres su Supabase, deploy su Railway) + package condiviso.
+
+## Architettura
+
+```mermaid
+flowchart LR
+    subgraph Client["Client"]
+        Mobile["App Cliente\n(Expo / React Native)"]
+        Admin["Dashboard Admin\n(React / Vite)"]
+    end
+
+    subgraph Backend["apps/backend — NestJS"]
+        API["REST API\n(/api/*)"]
+        WS["WebSocket Gateway\n(chat realtime)"]
+        Guards["JWT Auth + RBAC\n(RolesGuard, Throttler)"]
+        Health["/api/health\n(Terminus)"]
+        Logger["Structured logging\n(nestjs-pino)"]
+    end
+
+    subgraph Providers["Provider esterni (dietro interfaccia)"]
+        Gemini["Gemini AI\n(suggerimenti + moderazione)"]
+        Stripe["Stripe\n(pagamenti, test mode)"]
+        Brevo["Brevo\n(email OTP)"]
+        Lean["Open Banking\n(verifica IBAN)"]
+    end
+
+    DB[("Postgres\n(Supabase)")]
+
+    Mobile -- "HTTPS + Socket.io" --> API
+    Mobile -- "realtime" --> WS
+    Admin -- "HTTPS (Bearer JWT)" --> API
+
+    API --> Guards
+    WS --> Guards
+    Guards --> Health
+    Guards --> Logger
+
+    API --> Gemini
+    API --> Stripe
+    API --> Brevo
+    API --> Lean
+
+    API -- "Prisma" --> DB
+    WS -- "Prisma" --> DB
+```
+
+Deploy: backend su Railway (Docker o build Node diretto), Postgres su Supabase,
+mobile distribuita via Expo/EAS, dashboard admin come SPA statica (Vite build).
 
 ## Struttura
 
 - `apps/mobile` — App Cliente completa (Expo, TypeScript). Ha anche un layer mock (`src/services/mockData.ts`) per lavorare offline, ma di default parla con il backend reale (`src/services/config.ts`).
+- `apps/admin` — Dashboard web (React + Vite + TS) per gli operatori: login con verifica ruolo `ADMIN`, gestione dispute (`/admin/disputes`), stessa API del backend principale.
 - `apps/backend` — NestJS + Prisma, moduli isolati con provider astratti sostituibili (Stripe per i pagamenti, Gemini per l'AI, Lean per l'open banking).
 - `packages/shared` — Tipi, costanti (paesi, città, categorie), validazioni condivise.
 
@@ -48,6 +96,28 @@ docker-compose up --build
 
 L'API risponde su `http://localhost:3000/api`. Al primo avvio sincronizza
 da solo lo schema Prisma sul Postgres locale.
+
+### Health check & logging
+
+- `GET /api/health` — usato da Docker/Railway per capire se il servizio è vivo:
+  verifica anche la connettività reale al database (`@nestjs/terminus`), non solo
+  che il processo risponda. Escluso dai log delle richieste per non fare rumore.
+- Logging strutturato via `nestjs-pino`: JSON in produzione (pronto per un log
+  aggregator), formattazione leggibile (`pino-pretty`) in sviluppo. Header
+  sensibili (`Authorization`, `Cookie`) sempre oscurati nei log.
+
+## Dashboard admin
+
+```bash
+cd apps/admin
+npm install
+cp .env.example .env   # punta a VITE_API_URL del backend (Railway o localhost)
+npm run dev
+```
+
+Login richiede un utente con ruolo `ADMIN` (vedi seed sopra). Attualmente
+espone la coda dispute: risoluzione a favore cliente/artigiano con conferma a
+due step, protetta dallo stesso RBAC del backend.
 
 ## Test automatici
 
