@@ -8,7 +8,7 @@ export default function Reviews() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    listReviews(page).then(setData).catch(() => setError('Impossibile caricare le recensioni.'));
+    listReviews(page).then(setData).catch(() => setError('Could not load reviews.'));
   }, [page]);
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
@@ -16,7 +16,7 @@ export default function Reviews() {
   return (
     <>
       <div className="page-header">
-        <h1>Recensioni</h1>
+        <h1>Reviews</h1>
       </div>
 
       {error && <div className="error-box">{error}</div>}
@@ -25,12 +25,12 @@ export default function Reviews() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Cliente</th>
-              <th>Artigiano</th>
-              <th>Voto</th>
-              <th>Consiglia</th>
-              <th>Commento</th>
-              <th>Data</th>
+              <th>Client</th>
+              <th>Artisan</th>
+              <th>Rating</th>
+              <th>Recommends</th>
+              <th>Comment</th>
+              <th>Date</th>
             </tr>
           </thead>
           <tbody>
@@ -39,21 +39,21 @@ export default function Reviews() {
                 <td>{r.client.firstName} {r.client.lastName}</td>
                 <td>{r.artisan.name}</td>
                 <td>{r.rating} / 5</td>
-                <td>{r.recommend ? 'Sì' : 'No'}</td>
+                <td>{r.recommend ? 'Yes' : 'No'}</td>
                 <td>{r.text ?? '—'}</td>
-                <td>{new Date(r.createdAt).toLocaleDateString('it-IT')}</td>
+                <td>{new Date(r.createdAt).toLocaleDateString('en-GB')}</td>
               </tr>
             ))}
             {data && data.items.length === 0 && (
-              <tr><td colSpan={6} className="muted">Nessuna recensione trovata.</td></tr>
+              <tr><td colSpan={6} className="muted">No reviews found.</td></tr>
             )}
           </tbody>
         </table>
         {data && data.total > data.pageSize && (
           <div className="pagination">
-            <button className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Precedente</button>
-            <span>Pagina {page} di {totalPages}</span>
-            <button className="btn-ghost" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Successiva →</button>
+            <button className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Previous</button>
+            <span>Page {page} of {totalPages}</span>
+            <button className="btn-ghost" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next →</button>
           </div>
         )}
       </div>

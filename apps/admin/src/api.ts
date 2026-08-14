@@ -1,4 +1,4 @@
-/** Client API minimale verso lo stesso backend NestJS usato dall'app mobile. */
+/** Minimal API client for the same NestJS backend used by the mobile app. */
 const API_URL = import.meta.env.VITE_API_URL || 'https://artisanbackend-production.up.railway.app/api';
 
 const TOKEN_KEY = 'artisan_admin_token';

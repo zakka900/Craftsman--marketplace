@@ -11,7 +11,7 @@ export default function Users() {
   useEffect(() => {
     listUsers(page, search || undefined)
       .then(setData)
-      .catch(() => setError('Impossibile caricare gli utenti.'));
+      .catch(() => setError('Could not load users.'));
   }, [page, search]);
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
@@ -19,12 +19,12 @@ export default function Users() {
   return (
     <>
       <div className="page-header">
-        <h1>Utenti</h1>
+        <h1>Users</h1>
       </div>
 
       <div className="toolbar">
         <input
-          placeholder="Cerca per nome o email…"
+          placeholder="Search by name or email…"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
         />
@@ -36,13 +36,13 @@ export default function Users() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Nome</th>
+              <th>Name</th>
               <th>Email</th>
-              <th>Paese</th>
-              <th>Email verificata</th>
-              <th>Banca verificata</th>
-              <th>Richieste</th>
-              <th>Registrato il</th>
+              <th>Country</th>
+              <th>Email verified</th>
+              <th>Bank verified</th>
+              <th>Requests</th>
+              <th>Registered on</th>
             </tr>
           </thead>
           <tbody>
@@ -51,22 +51,22 @@ export default function Users() {
                 <td>{u.firstName} {u.lastName}</td>
                 <td>{u.email}</td>
                 <td>{u.country}</td>
-                <td>{u.emailVerified ? 'Sì' : 'No'}</td>
-                <td>{u.bankVerified ? 'Sì' : 'No'}</td>
+                <td>{u.emailVerified ? 'Yes' : 'No'}</td>
+                <td>{u.bankVerified ? 'Yes' : 'No'}</td>
                 <td>{u._count.requests}</td>
-                <td>{new Date(u.createdAt).toLocaleDateString('it-IT')}</td>
+                <td>{new Date(u.createdAt).toLocaleDateString('en-GB')}</td>
               </tr>
             ))}
             {data && data.items.length === 0 && (
-              <tr><td colSpan={7} className="muted">Nessun utente trovato.</td></tr>
+              <tr><td colSpan={7} className="muted">No users found.</td></tr>
             )}
           </tbody>
         </table>
         {data && data.total > data.pageSize && (
           <div className="pagination">
-            <button className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Precedente</button>
-            <span>Pagina {page} di {totalPages}</span>
-            <button className="btn-ghost" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Successiva →</button>
+            <button className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Previous</button>
+            <span>Page {page} of {totalPages}</span>
+            <button className="btn-ghost" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next →</button>
           </div>
         )}
       </div>

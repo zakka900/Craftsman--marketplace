@@ -17,14 +17,14 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
     try {
       await login(email.trim(), password);
       onLogin();
-      nav('/disputes', { replace: true });
+      nav('/overview', { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
-        setError('Questo account non ha il ruolo ADMIN.');
+        setError('This account does not have the ADMIN role.');
       } else if (err instanceof ApiError && (err.status === 404 || err.status === 401)) {
-        setError('Credenziali non valide.');
+        setError('Invalid credentials.');
       } else {
-        setError('Errore di connessione al backend.');
+        setError('Could not connect to the backend.');
       }
     } finally {
       setLoading(false);
@@ -38,7 +38,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
           <span className="brand-dot" />
           Artisan Marketplace
         </div>
-        <p className="login-sub">Accesso amministratori — richiede ruolo ADMIN</p>
+        <p className="login-sub">Admin access — requires the ADMIN role</p>
 
         <label>
           Email
@@ -52,7 +52,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
         {error && <div className="error-box">{error}</div>}
 
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? 'Accesso in corso…' : 'Accedi'}
+          {loading ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
     </div>

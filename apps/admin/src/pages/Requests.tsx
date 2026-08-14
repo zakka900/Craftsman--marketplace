@@ -16,7 +16,7 @@ export default function Requests() {
   useEffect(() => {
     listRequests(page, status || undefined)
       .then(setData)
-      .catch(() => setError('Impossibile caricare le richieste.'));
+      .catch(() => setError('Could not load requests.'));
   }, [page, status]);
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
@@ -24,12 +24,12 @@ export default function Requests() {
   return (
     <>
       <div className="page-header">
-        <h1>Richieste</h1>
+        <h1>Requests</h1>
       </div>
 
       <div className="toolbar">
         <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
-          <option value="">Tutti gli stati</option>
+          <option value="">All statuses</option>
           {STATUSES.map((s) => <option key={s} value={s}>{statusLabel(s)}</option>)}
         </select>
       </div>
@@ -40,14 +40,14 @@ export default function Requests() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Cliente</th>
-              <th>Categoria</th>
-              <th>Città</th>
-              <th>Stato</th>
-              <th>Preventivi</th>
-              <th>Artigiano</th>
-              <th>Prezzo</th>
-              <th>Creata il</th>
+              <th>Client</th>
+              <th>Category</th>
+              <th>City</th>
+              <th>Status</th>
+              <th>Quotes</th>
+              <th>Artisan</th>
+              <th>Price</th>
+              <th>Created on</th>
             </tr>
           </thead>
           <tbody>
@@ -60,19 +60,19 @@ export default function Requests() {
                 <td>{r._count.quotes}</td>
                 <td>{r.contract?.artisan.name ?? '—'}</td>
                 <td>{r.contract ? `${r.contract.price} ${r.contract.currency}` : '—'}</td>
-                <td>{new Date(r.createdAt).toLocaleDateString('it-IT')}</td>
+                <td>{new Date(r.createdAt).toLocaleDateString('en-GB')}</td>
               </tr>
             ))}
             {data && data.items.length === 0 && (
-              <tr><td colSpan={8} className="muted">Nessuna richiesta trovata.</td></tr>
+              <tr><td colSpan={8} className="muted">No requests found.</td></tr>
             )}
           </tbody>
         </table>
         {data && data.total > data.pageSize && (
           <div className="pagination">
-            <button className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Precedente</button>
-            <span>Pagina {page} di {totalPages}</span>
-            <button className="btn-ghost" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Successiva →</button>
+            <button className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Previous</button>
+            <span>Page {page} of {totalPages}</span>
+            <button className="btn-ghost" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next →</button>
           </div>
         )}
       </div>

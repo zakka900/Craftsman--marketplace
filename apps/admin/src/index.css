@@ -30,7 +30,7 @@ body {
 button { font-family: inherit; cursor: pointer; }
 input { font-family: inherit; }
 
-/* ---- shell (legacy topbar, tenuto per compatibilità) ---- */
+/* ---- shell (legacy topbar, kept for compatibility) ---- */
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
 
 .topbar {
@@ -42,7 +42,7 @@ input { font-family: inherit; }
 .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); display: inline-block; }
 .brand-sub { color: var(--sub); font-weight: 500; }
 
-/* ---- shell a sidebar ---- */
+/* ---- sidebar shell ---- */
 .app-shell-side { min-height: 100vh; display: flex; }
 
 .sidebar {
@@ -80,7 +80,7 @@ input { font-family: inherit; }
 .status-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px solid var(--border); }
 .status-row:last-child { border-bottom: none; }
 
-/* ---- tabelle ---- */
+/* ---- tables ---- */
 .table-wrap { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: auto; }
 table.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .data-table th {
@@ -99,7 +99,7 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 
 .pagination { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px; font-size: 13px; color: var(--sub); }
 
-/* badge status varianti */
+/* status badge variants */
 .badge-ok { background: var(--success-bg); color: var(--success); }
 .badge-danger { background: var(--danger-bg); color: var(--danger); }
 

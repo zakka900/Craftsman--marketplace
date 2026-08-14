@@ -18,7 +18,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  // Forza un re-render dell'intero albero dopo login/logout (il token vive fuori da React, in localStorage).
+  // Forces a re-render of the whole tree after login/logout (the token lives outside React, in localStorage).
   const [, forceUpdate] = useState(0);
   const refresh = () => forceUpdate((n) => n + 1);
 

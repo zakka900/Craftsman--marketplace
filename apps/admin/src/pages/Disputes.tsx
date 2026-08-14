@@ -12,7 +12,7 @@ export default function Disputes() {
     setError(null);
     listDisputes()
       .then(setDisputes)
-      .catch(() => setError('Impossibile caricare le dispute.'));
+      .catch(() => setError('Could not load disputes.'));
   };
 
   useEffect(load, []);
@@ -26,7 +26,7 @@ export default function Disputes() {
       await resolveDispute(id, resolution);
       setDisputes((prev) => (prev ?? []).filter((d) => d.id !== id));
     } catch {
-      setError('Risoluzione fallita — riprova.');
+      setError('Resolution failed — please try again.');
     } finally {
       setResolvingId(null);
     }
@@ -35,17 +35,17 @@ export default function Disputes() {
   return (
     <div>
       <div className="page-header">
-        <h1>Dispute aperte</h1>
-        <button className="btn-ghost" onClick={load}>Aggiorna</button>
+        <h1>Open disputes</h1>
+        <button className="btn-ghost" onClick={load}>Refresh</button>
       </div>
 
       {error && <div className="error-box">{error}</div>}
 
-      {disputes === null && !error && <p className="muted">Caricamento…</p>}
+      {disputes === null && !error && <p className="muted">Loading…</p>}
 
       {disputes?.length === 0 && (
         <div className="empty-state">
-          <p>Nessuna disputa aperta al momento.</p>
+          <p>No open disputes right now.</p>
         </div>
       )}
 
@@ -64,20 +64,20 @@ export default function Disputes() {
 
               <div className="dispute-meta">
                 <div>
-                  <span className="muted">Cliente</span>
+                  <span className="muted">Client</span>
                   <div>{d.client.firstName} {d.client.lastName} · {d.client.email}</div>
                 </div>
                 <div>
-                  <span className="muted">Artigiano</span>
+                  <span className="muted">Artisan</span>
                   <div>{d.request.contract?.artisan?.name ?? '—'}</div>
                 </div>
                 <div>
-                  <span className="muted">Richiesta</span>
+                  <span className="muted">Request</span>
                   <div>{d.request.categoryId} — {d.request.description.slice(0, 80)}</div>
                 </div>
                 <div>
-                  <span className="muted">Pagamento</span>
-                  <div>{payment ? payment.status : 'nessuno'}</div>
+                  <span className="muted">Payment</span>
+                  <div>{payment ? payment.status : 'none'}</div>
                 </div>
               </div>
 
@@ -89,9 +89,9 @@ export default function Disputes() {
 
               {pendingConfirm?.id === d.id ? (
                 <div className="confirm-row">
-                  <span>Confermi risoluzione a favore di {pendingConfirm.resolution === 'CLIENT' ? 'cliente' : 'artigiano'}?</span>
-                  <button className="btn-primary" onClick={confirmResolve}>Conferma</button>
-                  <button className="btn-ghost" onClick={() => setPendingConfirm(null)}>Annulla</button>
+                  <span>Confirm resolution in favor of the {pendingConfirm.resolution === 'CLIENT' ? 'client' : 'artisan'}?</span>
+                  <button className="btn-primary" onClick={confirmResolve}>Confirm</button>
+                  <button className="btn-ghost" onClick={() => setPendingConfirm(null)}>Cancel</button>
                 </div>
               ) : (
                 <div className="dispute-actions">
@@ -100,14 +100,14 @@ export default function Disputes() {
                     disabled={resolvingId === d.id}
                     onClick={() => setPendingConfirm({ id: d.id, resolution: 'CLIENT' })}
                   >
-                    Risolvi per il cliente
+                    Resolve for the client
                   </button>
                   <button
                     className="btn-outline"
                     disabled={resolvingId === d.id}
                     onClick={() => setPendingConfirm({ id: d.id, resolution: 'ARTISAN' })}
                   >
-                    Risolvi per l'artigiano
+                    Resolve for the artisan
                   </button>
                 </div>
               )}

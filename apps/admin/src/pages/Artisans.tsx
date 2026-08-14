@@ -11,7 +11,7 @@ export default function Artisans() {
   useEffect(() => {
     listArtisans(page, search || undefined)
       .then(setData)
-      .catch(() => setError('Impossibile caricare gli artigiani.'));
+      .catch(() => setError('Could not load artisans.'));
   }, [page, search]);
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
@@ -19,12 +19,12 @@ export default function Artisans() {
   return (
     <>
       <div className="page-header">
-        <h1>Artigiani</h1>
+        <h1>Artisans</h1>
       </div>
 
       <div className="toolbar">
         <input
-          placeholder="Cerca per nome o città…"
+          placeholder="Search by name or city…"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
         />
@@ -36,14 +36,14 @@ export default function Artisans() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Nome</th>
-              <th>Categoria</th>
-              <th>Città</th>
-              <th>Paese</th>
-              <th>Verificato</th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>City</th>
+              <th>Country</th>
+              <th>Verified</th>
               <th>Rating</th>
-              <th>Lavori completati</th>
-              <th>Contratti</th>
+              <th>Jobs completed</th>
+              <th>Contracts</th>
             </tr>
           </thead>
           <tbody>
@@ -53,22 +53,22 @@ export default function Artisans() {
                 <td>{a.categoryId}</td>
                 <td>{a.city}</td>
                 <td>{a.country}</td>
-                <td>{a.verified ? 'Sì' : 'No'}</td>
+                <td>{a.verified ? 'Yes' : 'No'}</td>
                 <td>{a.rating.toFixed(1)}</td>
                 <td>{a.jobsDone}</td>
                 <td>{a._count.contracts}</td>
               </tr>
             ))}
             {data && data.items.length === 0 && (
-              <tr><td colSpan={8} className="muted">Nessun artigiano trovato.</td></tr>
+              <tr><td colSpan={8} className="muted">No artisans found.</td></tr>
             )}
           </tbody>
         </table>
         {data && data.total > data.pageSize && (
           <div className="pagination">
-            <button className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Precedente</button>
-            <span>Pagina {page} di {totalPages}</span>
-            <button className="btn-ghost" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Successiva →</button>
+            <button className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Previous</button>
+            <span>Page {page} of {totalPages}</span>
+            <button className="btn-ghost" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next →</button>
           </div>
         )}
       </div>

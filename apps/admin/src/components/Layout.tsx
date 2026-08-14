@@ -3,12 +3,12 @@ import { clearToken } from '../api';
 
 const NAV = [
   { to: '/overview', label: 'Overview', icon: '◧' },
-  { to: '/users', label: 'Utenti', icon: '◍' },
-  { to: '/artisans', label: 'Artigiani', icon: '◆' },
-  { to: '/requests', label: 'Richieste', icon: '▤' },
-  { to: '/payments', label: 'Pagamenti', icon: '◈' },
-  { to: '/reviews', label: 'Recensioni', icon: '★' },
-  { to: '/disputes', label: 'Dispute', icon: '⚑' }
+  { to: '/users', label: 'Users', icon: '◍' },
+  { to: '/artisans', label: 'Artisans', icon: '◆' },
+  { to: '/requests', label: 'Requests', icon: '▤' },
+  { to: '/payments', label: 'Payments', icon: '◈' },
+  { to: '/reviews', label: 'Reviews', icon: '★' },
+  { to: '/disputes', label: 'Disputes', icon: '⚑' }
 ];
 
 export default function Layout({ children, onLogout }: { children: React.ReactNode; onLogout: () => void }) {
